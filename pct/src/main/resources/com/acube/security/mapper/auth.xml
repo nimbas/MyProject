@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="com.acube.security.mapper.AuthorityRepository">
+	<sql id="CommonSearchFilterQueryGeneration">
+		<if test="filterCount > 0">
+		 	AND (
+		 	<choose>
+		 	<when test="filterOper != null and filterOper.groupOp eq 'OR'">
+		 		<foreach collection="searchFilters" separator="OR" item="filter" index="index">
+					<choose><when test='filter.type eq "=" or filter.type eq "!=" or filter.type eq "IN" or filter.type eq "NOT IN"'>${filter.name}</when><otherwise>UPPER(${filter.name})</otherwise></choose> ${filter.type} <choose><when test='filter.type eq "=" or filter.type eq "!="'>#{filter.value}</when><otherwise>${filter.value}</otherwise></choose> 
+				</foreach>
+		 	</when>
+		 	<otherwise>
+		 		<foreach collection="searchFilters" separator="AND" item="filter" index="index">
+					<choose><when test='filter.type eq "=" or filter.type eq "!=" or filter.type eq "IN" or filter.type eq "NOT IN"'>${filter.name}</when><otherwise>UPPER(${filter.name})</otherwise></choose> ${filter.type} <choose><when test='filter.type eq "=" or filter.type eq "!="'>#{filter.value}</when><otherwise>${filter.value}</otherwise></choose> 
+				</foreach>
+		 	</otherwise>
+		 	</choose>
+		 	)
+		</if>
+	</sql>
+	
+	<resultMap id="BaseResultMap" type="AsCoAuthCode">
+	    <id column="AUTH_NAME" jdbcType="CHAR" property="authId" />
+	    <id column="AUTH_NAME" jdbcType="VARCHAR" property="authName" />
+	    <result column="DESCRIPTION" jdbcType="VARCHAR" property="description" />
+	    <result column="AUTH_TYPE" jdbcType="VARCHAR" property="authType" />
+	    <result column="SYS_CREATE_DATE" jdbcType="TIMESTAMP" property="sysCreateDate" />
+	    <result column="SYS_UPDATE_DATE" jdbcType="TIMESTAMP" property="sysUpdateDate" />
+	    <result column="SYS_OPERATOR_ID" jdbcType="VARCHAR" property="sysOperatorId" />
+	    <result column="SYS_APPLICATION_ID" jdbcType="VARCHAR" property="sysApplicationId" />
+	    <result column="DL_SERVICE_CODE" jdbcType="VARCHAR" property="dlServiceCode" />
+	    <result column="DL_UPDATE_STAMP" jdbcType="DECIMAL" property="dlUpdateStamp" />
+ 	</resultMap>
+	<sql id="Base_Column_List" >
+	    AUTH_NAME, DESCRIPTION, AUTH_TYPE, SYS_CREATE_DATE, SYS_UPDATE_DATE, 
+	    SYS_OPERATOR_ID, SYS_APPLICATION_ID, DL_SERVICE_CODE, DL_UPDATE_STAMP
+	</sql>
+	
+	<select id="getAuthorities" parameterType="AsSearchFilter" resultMap="BaseResultMap">
+		SELECT
+			<include refid="Base_Column_List"/>
+		FROM aba_co_auth_code
+		WHERE 1=1
+		<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	<insert id="addAuthority" parameterType="AsCoAuthCode">
+		INSERT INTO aba_co_auth_code(
+			auth_name,
+			description,
+			auth_type,
+			sys_create_date,
+			sys_update_date,
+			operator_id,
+			application_id,
+			dl_service_code,
+			dl_update_stamp
+		)VALUES(
+			#{authName},
+			#{description},
+			#{authType},
+			SYSDATE,
+			SYSDATE,
+			#{operatorId},
+			#{applicationId},
+			'addAuthority',
+			0
+		)
+	</insert>
+	<insert id="addAuthorityByProfile" parameterType="AsProfileElement">
+		INSERT INTO aba_co_auth_code(
+			auth_name,
+			description,
+			auth_type,
+			sys_create_date,
+			sys_update_date,
+			operator_id,
+			application_id,
+			dl_service_code,
+			dl_update_stamp
+		)VALUES(
+			#{objectId},
+			#{description},
+			#{objectType},
+			SYSDATE,
+			SYSDATE,
+			#{operatorId},
+			#{applicationId},
+			'addAuthorityByProfile',
+			0
+		)
+	</insert>
+	<update id="updateAuthority" parameterType="AsCoAuthCode" >
+	 	UPDATE aba_co_auth_code
+	 	SET description = #{description},
+	 		sys_update_date = sysdate,
+			operator_id = #{operatorId},
+			application_id = #{applicationId},
+			dl_service_code = 'updateAuthority',
+		WHERE  AUTH_NAME = #{authName} 
+	</update>
+	<delete id="deleteAuthority" parameterType="AsCoAuthCode" >
+	 	Delete  FROM aba_co_auth_code
+		WHERE  AUTH_NAME = #{authName} 
+	</delete>
+	<delete id="deleteAuthorityByProfile" parameterType="AsProfileElement" >
+	 	Delete  FROM aba_co_auth_code
+		WHERE  AUTH_NAME = #{objectId} 
+	</delete>
+</mapper>

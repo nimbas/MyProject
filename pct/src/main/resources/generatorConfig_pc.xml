@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+  PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+  "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+
+<generatorConfiguration>
+	<classPathEntry
+		location="C:\Users\kangyou\.m2\repository\com\oracle\ojdbc6\11.1.0.7.0\ojdbc6-11.1.0.7.0.jar" />
+
+	<context id="OracleTables" targetRuntime="MyBatis3">
+
+		<!-- Plugin -->
+		<plugin type="org.mybatis.generator.plugins.RowBoundsPlugin" />
+		
+		<!-- jdbc:oracle:thin:@//[HOST][:PORT]/SERVICE -->
+		<jdbcConnection driverClass="oracle.jdbc.driver.OracleDriver"
+			connectionURL="jdbc:oracle:thin:@211.238.176.44:1521:MONGBILL"
+			userId="abacus" password="abacus">
+		</jdbcConnection>
+
+		<javaTypeResolver>
+			<property name="forceBigDecimals" value="false" />
+		</javaTypeResolver>
+
+		<javaModelGenerator targetPackage="com.acube.pc.domain" targetProject="pct">
+		</javaModelGenerator>
+
+		<sqlMapGenerator targetPackage="com.acube.pc.mapper.mbg"
+			targetProject="pct\src\main\resources">
+			<property name="enableSubPackages" value="false" />
+		</sqlMapGenerator>
+
+		<javaClientGenerator type="XMLMAPPER"
+			targetPackage="com.acube.pc.mapper.mbg" targetProject="pct">
+		</javaClientGenerator>
+
+		<!-- SET TABLE NAME FOR CREATING -->
+		<table schema="abacus" tableName="ABA_PD_VOUCHER_RECHARGE_PROD" 		domainObjectName="VoucherRchargeProd"     modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_VOUCHER_RECHARGE_LOYAL" 		domainObjectName="VoucherRechargeLoyal"   modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_VOUCHER_RECHARGE_AMOUNT"       domainObjectName="VoucherRechargeAmount"  modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_VOUCHER_INFO"                  domainObjectName="VoucherInfo"            modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_VOUCHER_BY_PROD"               domainObjectName="VoucherByProd"          modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_TV_CHNL_BY_PROD"               domainObjectName="TvChnlByProd"           modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_TV_CHANNEL"                    domainObjectName="TvChannel"              modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_TM_ZONE_INFO"                  domainObjectName="TmZoneInfo"             modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_TM_SET_CD"                     domainObjectName="TmSetCd"                modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_TM_SECT_RATE"                  domainObjectName="TmSectRate"             modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_TMLV"                          domainObjectName="Tmlv"                   modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_THRESHOLD_MASTER"              domainObjectName="ThresholdMaster"        modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_THRESHOLD_BY_PROD"             domainObjectName="ThresholdByProd"        modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_THRESHOLD"                     domainObjectName="Threshold"              modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_SPCL_NO_INFO"                  domainObjectName="SpclNoInfo"             modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_SECT_SET_CD"                   domainObjectName="SectSetCd"              modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_SECTLV"                        domainObjectName="Sectlv"                 modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_SDR_EXRE_HIST"                 domainObjectName="SdrExreHist"            modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_SDR_EXRE"                      domainObjectName="SdrExre"                modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_SABE_CHNL_BY_PROD"             domainObjectName="SabeChnlByProd"         modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_REQUIRED_DEVICE"               domainObjectName="RequiredDevice"         modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_RATE_INTERVAL"                 domainObjectName="RateInterval"           modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_RATE"                          domainObjectName="Rate"                   modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PVS_MAP"                       domainObjectName="PvsMap"                 modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROV_PARAM_SEQ"                domainObjectName="ProvParamSeq"           modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROV_PARAM_INFO"               domainObjectName="ProvParamInfo"          modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROV_NE_INFO"                  domainObjectName="ProvNeInfo"             modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROV_NE_BY_PROD"               domainObjectName="ProvNeByProd"           modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROV_MAP"                      domainObjectName="ProvMap"                modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROV_FTR_BY_PROD"              domainObjectName="ProvFtrByProd"          modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROV_FTR_BY_DEPOSIT"           domainObjectName="ProvFtrByDeposit"       modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROV_FTR"                      domainObjectName="ProvFtr"                modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROV_ENUM"                     domainObjectName="ProvEnum"               modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROV_CMD"                      domainObjectName="ProvCmd"                modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROD_PENALTY"                  domainObjectName="ProdPenalty"            modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROD_PARAMETER_INFO"           domainObjectName="ProdParameterInfo"      modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROD_GRP"                      domainObjectName="ProdGrp"                modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROD_DPND_RELS"                domainObjectName="ProdDpndRels"           modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROD_DEPOSIT_COND"             domainObjectName="ProdDepositCond"        modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROD_DEPOSIT"                  domainObjectName="ProdDeposit"            modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROD_CREL"                     domainObjectName="ProdCrel"               modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROD_CHNG_TRANF_COUNTER"       domainObjectName="ProdChngTranfCounter"   modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROD_CHAR_INFO"                domainObjectName="ProdCharInfo"           modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROD_CHANGE_TRANF_SUB"         domainObjectName="ProdChangeTranfSub"     modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROD_CHANGE_SCHEME"            domainObjectName="ProdChangeScheme"       modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROD_BY_GRP"                   domainObjectName="ProdByGrp"              modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROD_BY_DOMAIN"                domainObjectName="ProdByDomain"           modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PRODUCT"                       domainObjectName="Product"                modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PROD"                          domainObjectName="Prod"                   modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_PREFIX_SETTLEMENT"             domainObjectName="PrefixSettlement"       modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_ONETIME_ATTR"                  domainObjectName="OnetimeAttr"            modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_NUM_PREFIX_BY_SVC"             domainObjectName="NumPrefixBySvc"         modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_NUM_PREFIX_BY_PROD"            domainObjectName="NumPrefixByProd"        modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_NUMBER_SAVING_BY_PROD"         domainObjectName="NumberSavingByProd"     modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_NUMBER_SAVING"                 domainObjectName="NumberSaving"           modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_NUMBER_FEE_BY_PROD"            domainObjectName="NumberFeeByProd"        modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_NATN_INFO"                     domainObjectName="NatnInfo"               modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_NATN_GRP_INFO"                 domainObjectName="NatnGrpInfo"            modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_NATN_GRP_DETAIL_INFO"          domainObjectName="NatnGrpDetailInfo"      modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_MCC_MNC"                       domainObjectName="MccMnc"                 modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_MARKET_BY_DOMAIN"              domainObjectName="MarketByDomain"         modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_MARKET"                        domainObjectName="Market"                 modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_LIFECYCLE_STATE_PERM"          domainObjectName="LifecycleStatePerm"     modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_LIFECYCLE_STATES_INFO"         domainObjectName="LifecycleStatesInfo"    modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_LIFECYCLE"                     domainObjectName="Lifecycle"              modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_HW_CONFIG_INFO"                domainObjectName="HwConfigInfo"           modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_HW_CONFIG_BY_PROD"             domainObjectName="HwConfigByProd"         modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_FTR_BY_RVNU"                   domainObjectName="FtrByRvnu"              modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_FTR_BY_DEPOSIT"                domainObjectName="FtrByDeposit"           modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_FTR"                           domainObjectName="Ftr"                    modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_FROM_TO_PROD_GRP"              domainObjectName="FromToProdGrp"          modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_EXRE_HIST"                     domainObjectName="ExreHist"               modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_EXRE"                          domainObjectName="Exre"                   modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_DSCNT_PRTY_SET_CD"             domainObjectName="DscntPrtySetCd"         modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_DSCNT_PRTY"                    domainObjectName="DscntPrty"              modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_DSCNT_PROD_PRTY"               domainObjectName="DscntProdPrty"          modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_DSCNT_PROD_INFO"               domainObjectName="DscntProdInfo"          modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_DSCNT_PROD_BY_GRP"             domainObjectName="DscntProdByGrp"         modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_DSCNT_GRP"                     domainObjectName="DscntGrp"               modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_DSCNT_FTR"                     domainObjectName="DscntFtr"               modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_DISCOUNT_FOR_CUG"              domainObjectName="DiscountForCug"         modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_DEV_MDL"                       domainObjectName="DevMdl"                 modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_DEV_DEPOSIT_BY_PROD"           domainObjectName="DevDepositByProd"       modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_DEV_BY_PROD"                   domainObjectName="DevByProd"              modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_DEPOSIT_DETAIL"                domainObjectName="DepositDetail"          modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_DEPOSIT_BY_PROD"               domainObjectName="DepositByProd"          modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_DEPOSIT_ADJUSTMENT"            domainObjectName="DepositAdjustment"      modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_DEPOSIT"                       domainObjectName="Deposit"                modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_CUSTOM_RC"                     domainObjectName="CustomRc"               modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_COUNTER_INFO"                  domainObjectName="CounterInfo"            modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_COUNTER_BY_PROD"               domainObjectName="CounterByProd"          modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_CONTS_STTL_INFO"               domainObjectName="ContsSttlInfo"          modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_CONTS_SALE_PRC_INFO"           domainObjectName="ContsSalePrcInfo"       modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_CONTS_PROD"                    domainObjectName="ContsProd"              modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_CONTS_FOR_PROD"                domainObjectName="ContsForProd"           modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_CONTS_CATEGORY"                domainObjectName="ContsCategory"          modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_CONTS"                         domainObjectName="Conts"                  modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_CHNL_BY_PROD"                  domainObjectName="ChnlByProd"             modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_CHNL"                          domainObjectName="Chnl"                   modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_CHARGE_ITEM_BY_PROD"           domainObjectName="ChargeItemByProd"       modelType="flat"/>
+		<table schema="abacus" tableName="ABA_PD_AMOUNT_BY_DEPOSIT" 			domainObjectName="AmountByDeposit"		  modelType="flat"/>
+		
+		<!-- security -->
+		<table schema="abacus" tableName="ABA_OR_USER" domainObjectName="Member" modelType="flat" />
+		<table schema="abacus" tableName="BS_TEST" domainObjectName="BsTest"/>
+		
+	</context>
+
+</generatorConfiguration>
