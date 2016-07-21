@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="com.acube.pvs.mapper.CustomerRepository">
+	
+	<!--  2013.03.20 grade 조회 추가  -->
+	<select id="getCustomerGradeFromCust" parameterType="AsEntrance" resultType="AsEntrance">
+		SELECT 
+			   SUB_GRADE AS grade
+	 	  FROM PI_CRM_SUBSCRIBER_GRADE_IF 
+		 WHERE CUSTOMER_ID = #{realCustNo} 
+		   AND SUBSCRIBER_ID= #{entrNo}
+	</select>
+	
+</mapper>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="com.acube.sub.repository.SearchCodeRepository">
+	<select id="getServiceDomain" resultType="AsCode">
+		SELECT 
+		      svc_domain AS codeId 
+			, fc_lookup_name(svc_domain, 'SvcDomain', 'en') AS codeName
+		FROM ABA_PD_MARKET_BY_DOMAIN
+		WHERE 1=1		
+		AND SYSDATE BETWEEN vald_strt_dt and vald_end_dt
+		GROUP BY svc_domain
+		ORDER BY 1
+	</select>
+</mapper>

@@ -1,0 +1,27 @@
+package com.acube.pvs.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.acube.pvs.domain.EntrContractBill;
+import com.acube.pvs.mapper.SubscriberServiceRepository;
+
+@Service
+public class SubscriberServiceImpl implements SubscriberService {
+	
+	@Autowired SubscriberServiceRepository subScriberServiceRepository;
+	
+/*	@Override
+	public int getCustAndEntrListCount(SearchFilter searchFilter) {
+		return 0;
+	}*/
+
+	@Override
+	public EntrContractBill getCustInfo(String searchEntrNo) {
+		// TODO Auto-generated method stub
+		EntrContractBill vo = null;
+		vo = subScriberServiceRepository.getContractBillInfo(searchEntrNo);
+		return vo;
+	}
+
+}

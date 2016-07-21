@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="com.acube.sub.repository.WorkHistoryDialogRepository">
+    
+    <select id="getSelectCategory" parameterType="AsMemoKind" resultType="AsMemoKind">
+    	<!-- SELECT DISTINCT MEMO_KD_CD AS memoKdCd, 
+    	       MEMO_NM AS memoNm 
+    	  FROM ABA_SB_MEMO_KD 
+    	 WHERE LANGUAGE = 'ENG' 
+    	   AND MEMO_CATG_CD = #{memoCateCd} -->
+    	SELECT
+    		MEMO_KD_CD 	AS memoKdCd
+ 		 ,  MEMO_NM 	AS memoNm
+		FROM ABA_SB_MEMO_KD
+		WHERE 1=1
+		AND LANGUAGE = 'ENG'
+		ORDER BY MEMO_NM
+    </select>
+    
+    <select id="getCbProductNo" parameterType="String" resultType="AsMemoKind">
+    	SELECT  
+    	             PROD_NO    AS prodNo
+    	           , CUST_NO	AS custNo          
+    	  FROM       ABA_SB_ENTR               
+    	 WHERE       ENTR_NO = #{entrNo}
+    	   AND       ENTR_STTS_CD IN ('A','S')
+    </select>
+    
+    <select id="getOperatorInfo" parameterType="AsSearchFilter" resultType="AsOperatorInfo">
+    SELECT 
+			 
+		 	MARKET_CODE                                              AS marketCode      ,
+		 	CASE WHEN MARKET_CODE = 1 THEN 'unitel'
+		 	                          ELSE 'univision'
+		 	END                                                      AS marketName      ,
+		    USER_ID                                                  AS userId          ,
+		    LOGIN_ID                                                 AS loginId         ,
+		    SYS_CREATE_DATE                                          AS sysCreationDate ,
+		    SYS_UPDATE_DATE                                          AS sysUpdateDate   ,
+		    OPERATOR_ID                                              AS operatorId      ,
+		    APPLICATION_ID                                           AS applicationId   ,
+		    DL_SERVICE_CODE                                          AS dlServiceCode   ,
+		    DL_UPDATE_STAMP                                          AS dlUpdateStamp   ,
+		    DLR_CD                                                   AS dlrCd           ,
+		    USER_NAME                                                AS userName        ,
+		    USER_NAME2                                               AS userName2       ,
+		    USERGROUP                                                AS usergroup       ,   
+		    PASSWORD                                                 AS password        ,
+		    OLD_PASSWORD                                             AS oldPassword     ,
+		    MAX_ADJUST_AMT                                           AS maxAdjustAmt    ,
+		    EFFECTIVE_DATE8                                          AS effectiveDate8  ,
+		    EXPIRATION_DATE8                                         AS expirationDate8 ,
+		    EMAIL_ADDRESS                                            AS emailAddress    ,
+		    BIRTHDAY                                                 AS birthday        ,
+		    AGE                                                      AS age             ,
+		    USER_LEVEL                                               AS userLevel       ,
+		    GENDER                                                   AS gender          ,
+		    ZIP_CODE                                                 AS zipCode         ,
+		    USER_MERRY_YN                                            AS userMerryYn     ,
+		    HOME_TELNO                                               AS homeTelno       ,
+		    MOBILE_TELNO                                             AS workTelno       ,
+		    MOBILE_TELNO                                             AS mobileTelno     ,
+		    WORK_DATE        								         AS workDate        ,
+		    USER_STATUS                                              AS userStatus      ,
+		    SALE_FLAG                                                AS saleFlag        ,
+		    CONST_FLAG                                               AS constFlag       ,
+		    INSTALL_FLAG                                             AS installFlag     ,
+		    AS_FLAG                                                  AS asFlag          ,
+		    REMOVE_FLAG                                              AS removeFlag      ,
+		    VILG_ABV_ADDR                                            AS vilgAbvAddr     ,
+		    VILG_BLW_ADDR                                            AS vilgBlwAddr     ,
+		    IP_ADDRESS                                               AS ipAddress       ,
+		    IP_ADDRESS                                               AS oldIpAddress    ,
+		    IP_SCAN_YN                                               AS ipScanYn        ,
+		    DESCRIPTION                                              AS description     ,
+		    STATUS                                     		         AS status          ,
+		    SUBSTR(EMAIL_ADDRESS, 0,INSTR(EMAIL_ADDRESS,'@',1,1)-1)  as emailId         ,
+		    SUBSTR(EMAIL_ADDRESS, INSTR(EMAIL_ADDRESS,'@',1,1)+1)    as opEmailDomain 	,   
+			(SELECT 
+			             dlr_nm 
+			   FROM      ABA_RV_DLR_MSTR b 
+			  WHERE      b.DLR_CD = a.DLR_CD  )                      AS dlrNm           , 
+        	FC_LOOKUP_NAME (a.user_level, 'UserLevel', 'en')         AS userlevelNm
+	  FROM  (SELECT      A.*
+		  	           , ROWNUM RNUM 
+		  	   FROM    ( SELECT      *
+				           FROM      ABA_OR_USER
+				          WHERE      1 = 1
+    		         <choose>       
+			             <when test='filterMap.searchCol == "USER_ID"'>
+			                AND      USER_ID LIKE '%'||#{filterMap.searchVal}||'%'
+			             </when>
+			             <when test='filterMap.searchCol == "USER_NAME"'>
+			                AND      USER_NAME LIKE '%'||#{filterMap.searchVal}||'%'
+			             </when>
+			             <when test='filterMap.searchCol == "DLR_CD"'>
+			                AND      DLR_CD LIKE '%'||#{filterMap.searchVal}||'%'
+			             </when>
+			         </choose>
+                            AND      MARKET_CODE = (SELECT market_code FROM ABA_OR_USER WHERE user_id = #{filterMap.sessionId} )
+		                  ORDER  BY  USER_ID, ROWID
+                       ) A
+		    ) a      
+	</select>
+	
+	<select id="getWorkHistoryInfo" parameterType="AsSearchFilter" resultType="AsMemoKind" >
+	    SELECT   
+    	 CUST_NO	                                                                                                       AS custMemoNo
+         ,CUST_MEMO_NO	                                                                                                   AS marketCode
+         ,ENTR_NO	                                                                                                       AS entrNo
+         ,PROD_NO	                                                                                                       AS prodNo
+         ,APLY_LVL_CD		                                                                                               AS aplyLvlCd
+         ,NVL(MEMO_CRTE_DLR_CD, SUBSTR(MEMO_CRTE_DLR_CDNM, 1, INSTR(MEMO_CRTE_DLR_CDNM, ',') -1))                          AS memoCrteDlrCd
+         ,NVL(MEMO_CRTE_DLR_NM, SUBSTR(MEMO_CRTE_DLR_CDNM, INSTR(MEMO_CRTE_DLR_CDNM, ',') +1, LENGTH(MEMO_CRTE_DLR_CDNM))) AS memoCrteDlrNm
+         ,CTI_CALL_NO		                                                                                               AS ctiCallNo
+         ,MEMO_CRTE_DTTM	                                                                                               AS memoCrteDttm
+         ,MEMO_KD_CD		                                                                                               AS memoKdCd
+         ,SYS_CREATION_DATE                                                                                                AS sysCreationDate
+         ,OPERATOR_ID	                                                                                                   AS operatorId
+         ,MEMO_NM		                                                                                                   AS memoNm
+         ,MEMO_CATG_CD	                                                                                                   AS memoCatgCd
+         ,''		                                                                                                       AS prodCd
+         ,PROD_NM		                                                                                                   AS prodNm
+         ,''		                                                                                                       AS userNm
+         ,MEMO_GB		                                                                                                   AS memoGb
+         ,SYS_MEMO		                                                                                                   AS sysMemo
+         ,USER_MEMO		                                                                                                   AS userMemo
+         ,BILL_ACNT_NO	                                                                                                   AS billAcntNo 
+    FROM (
+    	SELECT TMEMO.*,
+                    NULL MEMO_CRTE_DLR_CDNM
+                    ,MKD.MEMO_NM
+                    ,MKD.MEMO_CATG_CD
+                    ,NULL PROD_NM
+                    ,ROWNUM RN
+               FROM (
+                     SELECT AAA.*
+                        FROM (
+                              SELECT A.*
+                                 FROM(
+                                      SELECT *
+                                        FROM(
+                                             SELECT MEMO.CUST_NO
+                                                    ,MEMO.CUST_MEMO_NO
+                                                    ,MEMO.ENTR_NO
+                                                    ,MEMO.PROD_NO
+                                                    ,MEMO.APLY_LVL_CD
+                                                    ,MEMO.MEMO_CRTE_DLR_CD
+                                                    ,MEMO.MEMO_CRTE_DLR_NM
+                                                    ,MEMO.CTI_CALL_NO
+                                                    ,MEMO.MEMO_CRTE_DTTM
+                                                    ,MEMO.MEMO_KD_CD
+                                                    ,SYS_CREATION_DATE
+                                                    ,MEMO.OPERATOR_ID
+                                                    ,'C' MEMO_GB
+                                                    ,MEMO.SYS_MEMO
+                                                    ,MEMO.USER_MEMO
+                                                    ,(select bill_acnt_no from aba_sb_entr where entr_no=MEMO.ENTR_NO) BILL_ACNT_NO
+                                               FROM ABA_SB_CUST_MEMO MEMO
+											   <if test="filterMap.searchCol == 'CUST_NO'">
+	                                            WHERE  MEMO.CUST_NO=#{filterMap.searchVal}
+	                                            	<if test="filterMap.searchCategory != null and filterMap.searchCategory != ''">
+												  AND  MEMO.MEMO_KD_CD=#{filterMap.searchCategory}
+												    </if>
+	                                           </if>
+											   <if test="filterMap.searchCol == 'BILL_ACNT_NO'">
+											       ,(
+                                                     SELECT DISTINCT(ENTR_NO)
+                                                     FROM ABA_SB_ENTR_HIST
+                                                      
+                                                     WHERE BILL_ACNT_NO=#{filterMap.searchVal} 
+													  
+													 ) ENTR
+												WHERE MEMO.ENTR_NO = ENTR.ENTR_NO
+											   </if>
+                                               <if test="filterMap.searchCol == 'ENTR_NO'">
+												WHERE MEMO.ENTR_NO = #{filterMap.searchVal}
+													<if test="filterMap.searchCategory != null and filterMap.searchCategory!=''">
+												  AND  MEMO.MEMO_KD_CD=#{filterMap.searchCategory}
+												    </if>
+											   </if>
+											   <if test="filterMap.searchOperator != null and filterMap.searchOperator != ''">
+												AND MEMO.operator_id = #{filterMap.searchOperator}
+											   </if>
+                                             )
+                                         )A
+                                     UNION ALL
+                                     SELECT *
+                                      FROM (
+                                            SELECT  '0' CUST_NO
+                                                    ,MEMO.BILL_ACNT_MEMO_NO CUST_MEMO_NO
+                                                    ,'0' ENTR_NO
+                                                    ,'' PROD_NO
+                                                    ,'' APLY_LVL_CD
+                                                    ,MEMO.MEMO_CRTE_DLR_CD
+                                                    ,MEMO.MEMO_CRTE_DLR_NM
+                                                    ,0 CTI_CALL_NO
+                                                    ,MEMO_CRTE_DTTM
+                                                    ,MEMO.MEMO_KD_CD
+                                                    ,SYS_CREATION_DATE
+                                                    ,MEMO.OPERATOR_ID
+                                                    ,'B' MEMO_GB
+                                                    ,MEMO.SYS_MEMO_CNTNT AS SYS_MEMO
+                                                    ,MEMO.USER_MEMO_CNTNT AS USER_MEMO
+                                                    ,MEMO.BILL_ACNT_NO
+                                               FROM ABA_AR_BILL_ACNT_MEMO MEMO
+                                               WHERE 1=1
+                                                <if test="filterMap.searchCol == 'CUST_NO'">
+										    	    AND MEMO.BILL_ACNT_NO IN (
+										    	    	SELECT DISTINCT (BILL_ACNT_NO) 
+										    	    	FROM ABA_SB_ENTR_HIST 
+										    	    	WHERE CUST_NO=#{filterMap.searchVal}
+										    	    )												  
+												 
+												    <if test="filterMap.searchOperator != null and filterMap.searchOperator != ''">
+												    AND MEMO.operator_id = #{filterMap.searchOperator}
+												    </if>
+												</if>
+												<if test="filterMap.searchCol == 'BILL_ACNT_NO'">
+												    AND    MEMO.BILL_ACNT_NO = #{filterMap.searchVal}
+												    <if test="filterMap.searchCategory != null and filterMap.searchCategory != ''">
+													AND    MEMO.MEMO_KD_CD = #{filterMap.searchCategory}
+													</if>
+												    AND    MEMO.BILL_ACNT_GRP_NO = SUBSTR( #{filterMap.searchVal} , -2)
+												    <if test="filterMap.searchOperator != null and filterMap.searchOperator != ''">
+													AND MEMO.operator_id = #{filterMap.searchOperator}
+													</if>
+												</if>
+												<if test="filterMap.searchCol == 'ENTR_NO'">
+												    AND MEMO.BILL_ACNT_NO IN (
+                                                   	    SELECT DISTINCT (BILL_ACNT_NO) 
+                                                   	    FROM ABA_SB_ENTR_HIST 
+                                                   	    WHERE ENTR_NO=#{filterMap.searchVal}
+                                                    )
+												    <if test="filterMap.searchOperator != null and filterMap.searchOperator != ''">
+													AND MEMO.operator_id = #{filterMap.searchOperator}
+													</if>
+												</if>
+                                         )
+                                     )AAA
+                                 ORDER BY SYS_CREATION_DATE DESC
+                             )TMEMO,
+                             ABA_SB_MEMO_KD MKD
+                         WHERE TMEMO.MEMO_KD_CD = MKD.MEMO_KD_CD(+)
+                         AND MEMO_CRTE_DTTM BETWEEN TO_DATE(NVL2(#{filterMap.strtDate, jdbcType=VARCHAR}, #{filterMap.strtDate, jdbcType=VARCHAR}, '1960-01-01'),'YYYY-MM-DD')
+			                                    AND TO_DATE(NVL2(#{filterMap.endDate , jdbcType=VARCHAR}, #{filterMap.endDate , jdbcType=VARCHAR}, '4700-12-31'),'YYYY-MM-DD') + 1
+    )
+	</select>
+    
+</mapper>

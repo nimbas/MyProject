@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="com.acube.security.mapper.ProfileRepository">
+	<sql id="CommonSearchFilterQueryGeneration">
+		<if test="filterCount > 0">
+		 	AND (
+		 	<choose>
+		 	<when test="filterOper != null and filterOper.groupOp eq 'OR'">
+		 		<foreach collection="searchFilters" separator="OR" item="filter" index="index">
+					<choose><when test='filter.type eq "=" or filter.type eq "!=" or filter.type eq "IN" or filter.type eq "NOT IN"'>${filter.name}</when><otherwise>UPPER(${filter.name})</otherwise></choose> ${filter.type} <choose><when test='filter.type eq "=" or filter.type eq "!="'>#{filter.value}</when><otherwise>${filter.value}</otherwise></choose> 
+				</foreach>
+		 	</when>
+		 	<otherwise>
+		 		<foreach collection="searchFilters" separator="AND" item="filter" index="index">
+					<choose><when test='filter.type eq "=" or filter.type eq "!=" or filter.type eq "IN" or filter.type eq "NOT IN"'>${filter.name}</when><otherwise>UPPER(${filter.name})</otherwise></choose> ${filter.type} <choose><when test='filter.type eq "=" or filter.type eq "!="'>#{filter.value}</when><otherwise>${filter.value}</otherwise></choose> 
+				</foreach>
+		 	</otherwise>
+		 	</choose>
+		 	)
+		</if>
+	</sql>
+	
+	<resultMap id="BaseResultMap" type="AsProfile">
+	    <id column="MARKET_CODE" jdbcType="CHAR" property="marketCode" />
+	    <id column="PROFILE_ID" jdbcType="VARCHAR" property="profileId" />
+	    <result column="DESCRIPTION" jdbcType="VARCHAR" property="description" />
+	    <result column="PROFILE_TYPE" jdbcType="VARCHAR" property="profileType" />
+	    <result column="SYS_CREATON_DATE" jdbcType="TIMESTAMP" property="sysCreationDate" />
+	    <result column="SYS_UPDATE_DATE" jdbcType="TIMESTAMP" property="sysUpdateDate" />
+	    <result column="SYS_OPERATOR_ID" jdbcType="VARCHAR" property="sysOperatorId" />
+	    <result column="SYS_APPLICATION_ID" jdbcType="VARCHAR" property="sysApplicationId" />
+	    <result column="DL_SERVICE_CODE" jdbcType="VARCHAR" property="dlServiceCode" />
+	    <result column="DL_UPDATE_STAMP" jdbcType="DECIMAL" property="dlUpdateStamp" />
+ 	</resultMap>
+ 	
+	<sql id="Base_Column_List" >
+	    MARKET_CODE, PROFILE_ID, DESCRIPTION, PROFILE_TYPE, SYS_CREATE_DATE, SYS_UPDATE_DATE, 
+	    SYS_OPERATOR_ID, SYS_APPLICATION_ID, DL_SERVICE_CODE, DL_UPDATE_STAMP
+	</sql>
+	
+	<select id="getProfiles" parameterType="AsSearchFilter" resultMap="BaseResultMap">
+		SELECT
+			<include refid="Base_Column_List"/>
+		FROM aba_se_security_profile_info
+		WHERE 1=1
+		<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	
+	<select id="getAvailableProfiles" parameterType="AsSearchFilter" resultMap="BaseResultMap">
+		SELECT
+			<include refid="Base_Column_List"/>
+		FROM aba_se_security_profile_info
+		WHERE 1=1
+		AND profile_id NOT IN (
+			SELECT profile_id FROM aba_se_group_profile_link
+			WHERE group_seq = #{filterMap.groupSeq}
+		)
+		<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	
+	<select id="getSelectedProfiles" parameterType="AsSearchFilter" resultMap="BaseResultMap">
+		SELECT
+			<include refid="Base_Column_List"/>
+		FROM aba_se_security_profile_info
+		WHERE 1=1
+		AND profile_id IN (
+			SELECT profile_id FROM aba_se_group_profile_link
+			WHERE group_seq = #{filterMap.groupSeq}
+		)
+		<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	
+	<resultMap id="BaseProfileElementResultMap" type="AsProfileElement">
+	    <id column="objectId" jdbcType="VARCHAR" property="objectId" />
+	    <result column="objectName" jdbcType="VARCHAR" property="objectName" />
+	    <result column="description" jdbcType="VARCHAR" property="description" />
+	    <result column="objectType" jdbcType="VARCHAR" property="objectType" />
+	    <result column="profileId" jdbcType="VARCHAR" property="profileId" />
+	    <result column="profileType" jdbcType="VARCHAR" property="profileType" />
+ 	</resultMap>
+ 	
+	<select id="getAvailableAuthorities" parameterType="AsSearchFilter" resultMap="BaseProfileElementResultMap">
+		SELECT
+			auth_name as objectId
+	      , auth_name as objectName
+	      , description as description
+	      , auth_type as objectType
+	  	FROM aba_co_auth_code 
+	 	WHERE auth_type = #{filterMap.objectType}
+	 	AND auth_name NOT IN (
+	 		SELECT auth_id
+            FROM  ABA_SE_AUTH_PROFILE_LINK 
+            WHERE PROFILE_ID = #{filterMap.objectId}
+        )    	
+		<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	<select id="getSelectedAuthorities" parameterType="AsSearchFilter" resultMap="BaseProfileElementResultMap">
+		SELECT
+			a.auth_id as objectId
+		  , a.auth_id as objectName
+	      , b.description as description
+	      , b.auth_type as objectType
+	  	FROM aba_se_auth_profile_link a, aba_co_auth_code b
+		WHERE a.auth_id = b.auth_name
+		AND a.profile_id = #{filterMap.objectId}
+		<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	
+	<select id="getAvailableChannels" parameterType="AsSearchFilter" resultMap="BaseProfileElementResultMap">
+		SELECT
+			sale_chnl_cd as objectId
+	      , sale_chnl_cd as objectName
+	      , sale_chnl_dscr as description
+	      , sale_chnl_kd_cd as objectType
+	  	FROM aba_pd_chnl
+	  	WHERE sale_chnl_cd NOT IN (
+	  		SELECT  auth_id
+	        FROM  aba_se_auth_profile_link b
+	        WHERE profile_id = #{filterMap.objectId})	 
+		AND sale_chnl_kd_cd = #{filterMap.objectType}    	
+		<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	<select id="getSelectedChannels" parameterType="AsSearchFilter" resultMap="BaseProfileElementResultMap">
+		SELECT
+			a.auth_id as objectId
+		  , a.auth_id as objectName
+	      , b.sale_chnl_dscr as description
+	      , b.sale_chnl_kd_cd as objectType
+	  	FROM aba_se_auth_profile_link a, aba_pd_chnl b
+		WHERE a.auth_id = B.SALE_CHNL_CD
+		   and a.profile_id = #{filterMap.objectId}
+		<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	
+	<select id="getAvailableObjects" parameterType="AsSearchFilter" resultMap="BaseProfileElementResultMap">
+		SELECT
+			security_no as objectId
+	      , security_no as objectName
+	      , description as description
+	      , record_type as objectType
+	  	FROM aba_co_security_elements 
+		WHERE security_no NOT IN (
+			SELECT auth_id
+            FROM  aba_se_auth_profile_link 
+            WHERE PROFILE_ID = #{filterMap.objectId})
+         AND record_type = #{filterMap.objectType}	
+		<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	<select id="getSelectedObjects" parameterType="AsSearchFilter" resultMap="BaseProfileElementResultMap">
+		SELECT
+			a.auth_id as objectId
+		  , a.auth_id as objectName
+	      , b.description as description
+	      , b.record_type as objectType
+	  	FROM aba_se_auth_profile_link a
+	       , aba_co_security_elements b
+	 	WHERE a.auth_id = b.security_no
+	   	AND profile_id = #{filterMap.objectId}
+		<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	<select id="getAvailableTreeMenu" parameterType="AsSearchFilter" resultMap="BaseProfileElementResultMap">
+		SELECT security_no  as objectId
+		 	 , security_no  as objectName
+		     , description as description
+		     , FC_LOOKUP_NAME(record_type, 'ProfileType', 'en') as objectType 
+		FROM aba_co_security_elements 
+		WHERE security_no NOT IN (
+			SELECT auth_id
+            FROM  aba_se_auth_profile_link 
+            WHERE PROFILE_ID = #{filterMap.objectId})
+        AND record_type = #{filterMap.objectType}
+        AND security_no in (
+			SELECT security_no
+            FROM aba_co_security_elements  
+            START WITH security_no = #{filterMap.menuId}  
+            CONNECT BY PRIOR security_no = top_menu_id
+		)
+	</select>
+	
+	<select id="getAllProfileElements" parameterType="AsSearchFilter" resultMap="BaseProfileElementResultMap">
+		SELECT profileId, profileType, objectId, objectName, description, objectType
+		FROM(
+			WITH profile AS(
+				SELECT a.profile_id, a.profile_type , b.meaning profileTypeName 
+				FROM ABA_SE_GROUP_PROFILE_LINK a, aba_co_fnd_lookup_values b
+				WHERE a.profile_type = b.ccode
+				AND a.GROUP_SEQ = #{filterMap.groupSeq}
+				AND b.ccode_group = 'ProfileType'
+			)
+			SELECT
+				  distinct
+				  x.profile_id 		as profileId
+				, x.profile_type	as profileType
+				, z.profileTypeName
+				, x.auth_id 		as objectId
+				, x.auth_id 		as objectName
+				, y.description		as description
+				, y.auth_type 		as objectType
+			FROM aba_se_auth_profile_link x, aba_co_auth_code y, profile z
+			WHERE x.enabled_flag = 'Y'
+			AND x.profile_id = z.profile_id
+			AND x.profile_type = z.profile_type
+			AND x.auth_id = y.auth_name			
+			UNION ALL
+			SELECT
+				  distinct
+				  x.profile_id 		as profileId
+				, x.profile_type	as profileType
+				, z.profileTypeName
+				, x.auth_id 		as objectId
+				, x.auth_id 		as objectName
+			    , y.sale_chnl_dscr 	as description
+			    , y.sale_chnl_kd_cd as objectType
+			FROM aba_se_auth_profile_link x, aba_pd_chnl y, profile z
+			WHERE x.profile_id = z.profile_id
+			AND x.profile_type = z.profile_type
+			AND x.auth_id = y.sale_chnl_cd
+			UNION ALL
+			SELECT
+				  distinct
+				  x.profile_id 		as profileId
+				, x.profile_type	as profileType
+				, z.profileTypeName
+				, x.auth_id 		as objectId
+				, x.auth_id 		as objectName
+			    , y.description 	as description
+			    , y.record_type 	as objectType
+			FROM aba_se_auth_profile_link x, aba_co_security_elements y, profile z
+			WHERE x.profile_id = z.profile_id
+			AND x.profile_type = z.profile_type
+			AND x.auth_id = to_char(y.security_no)
+		) WHERE 1=1
+		<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	
+	<insert id="addProfileElement" parameterType="AsProfileElement">
+		INSERT INTO aba_se_auth_profile_link(
+			seq_no,
+            auth_id,
+            profile_id,
+            profile_type,
+            enabled_flag,
+            sys_create_date,
+            sys_update_date,
+            sys_operator_id,
+            sys_application_id,
+            dl_service_code,
+            dl_update_stamp
+       	)VALUES(
+            ABA_SE_AUTH_PROFILE_LINK_01.NEXTVAL,
+            #{objectId},
+            #{profileId},
+            #{objectType},
+            'Y',
+            SYSDATE,
+            SYSDATE,
+            #{operatorId},
+            #{applicationId},
+            'addProfileElement',
+            0
+		)
+	</insert>
+	<delete id="deleteProfileElement" parameterType="AsProfileElement">
+		DELETE FROM aba_se_auth_profile_link 
+		WHERE profile_id = #{profileId}
+		AND auth_id = #{objectId}
+	</delete>
+	
+	<insert id="addProfileLink" parameterType="AsProfile">
+		INSERT INTO ABA_SE_GROUP_PROFILE_LINK (
+			SEQ_NO					             
+			, GROUP_SEQ          
+			, PROFILE_ID         
+			, PROFILE_TYPE       
+			, ENABLED_FLAG			       
+			, SYS_CREATE_DATE    
+			, SYS_OPERATOR_ID    
+			, SYS_APPLICATION_ID 
+			, DL_UPDATE_STAMP    
+		)VALUES (
+			SQ_ABA_SE_GROUP_PROFILE_LINK.NEXTVAL
+			, #{group.groupSeq}
+			, #{profileId} 
+			, #{profileType}
+			, #{enabledFlag}
+			
+			, SYSDATE
+			, #{operatorId}
+			, #{applicationId, jdbcType=VARCHAR}
+		    , 0
+		)
+	</insert>
+	
+	<delete id="deleteProfileLink">
+		DELETE FROM aba_se_group_profile_link WHERE group_seq =  #{groupSeq}
+	</delete>
+	
+	<delete id="deleteProfileLinkByEach">
+		DELETE FROM aba_se_group_profile_link WHERE group_seq = #{groupSeq} AND profile_id = #{profileId}
+	</delete>
+</mapper>

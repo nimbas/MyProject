@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="com.acube.pvs.mapper.ProdFeatureRepository">
+	<sql id="CommonSearchFilterQueryGeneration">
+		<if test="filterCount > 0">
+		 	AND (
+		 	<choose>
+		 	<when test="filterOper != null and filterOper.groupOp eq 'OR'">
+		 		<foreach collection="searchFilters" separator="OR" item="filter" index="index">
+					<choose><when test='filter.type eq "=" or filter.type eq "!=" or filter.type eq "IN" or filter.type eq "NOT IN"'>${filter.name}</when><otherwise>UPPER(${filter.name})</otherwise></choose> ${filter.type} <choose><when test='filter.type eq "=" or filter.type eq "!="'>#{filter.value}</when><otherwise>${filter.value}</otherwise></choose> 
+				</foreach>
+		 	</when>
+		 	<otherwise>
+		 		<foreach collection="searchFilters" separator="AND" item="filter" index="index">
+					<choose><when test='filter.type eq "=" or filter.type eq "!=" or filter.type eq "IN" or filter.type eq "NOT IN"'>${filter.name}</when><otherwise>UPPER(${filter.name})</otherwise></choose> ${filter.type} <choose><when test='filter.type eq "=" or filter.type eq "!="'>#{filter.value}</when><otherwise>${filter.value}</otherwise></choose> 
+				</foreach>
+		 	</otherwise>
+		 	</choose>
+		 	)
+		</if>
+	</sql>
+	
+	<resultMap id="ProdBaseResultMap" type="AsPsProd" >
+	    <id column="PROD_CD" property="prodCd" jdbcType="VARCHAR" />
+	    <result column="MRKT_CD" property="mrktCd" jdbcType="VARCHAR" />
+	    <result column="SVC_DOMAIN" property="svcDomain" jdbcType="VARCHAR" />
+	    <result column="PROD_DV_CD" property="prodDvCd" jdbcType="VARCHAR" />
+	    <result column="PROD_KD_CD" property="prodKdCd" jdbcType="VARCHAR" />
+	    <result column="PROD_KD_DTL_CD" property="prodKdDtlCd" jdbcType="VARCHAR" />
+	    <result column="CUST_DV_CD" property="custDvCd" jdbcType="VARCHAR" />
+	    <result column="VERSION" property="version" jdbcType="VARCHAR" />
+	    <result column="SALE_STRT_DTTM" property="saleStrtDttm" jdbcType="TIMESTAMP" />
+	    <result column="SALE_END_DTTM" property="saleEndDttm" jdbcType="TIMESTAMP" />
+	    <result column="PROD_ID_CD" property="prodIdCd" jdbcType="VARCHAR" />
+	    <result column="PROD_NAME" property="prodName" jdbcType="VARCHAR" />
+	    <result column="VALD_STRT_DT" property="valdStrtDt" jdbcType="TIMESTAMP" />
+	    <result column="VALD_END_DT" property="valdEndDt" jdbcType="TIMESTAMP" />
+	    <result column="PROD_PRTY" property="prodPrty" jdbcType="INTEGER" />
+	    <result column="PROD_STATE_CD" property="prodStateCd" jdbcType="VARCHAR" />
+	    <result column="DSCR" property="dscr" jdbcType="VARCHAR" />
+	    <result column="IS_BUNDLE" property="isBundle" jdbcType="INTEGER" />
+	    <result column="BILLING_CYCLE" property="billingCycle" jdbcType="INTEGER" />
+	    <result column="MPS_DOMAIN" property="mpsDomain" jdbcType="VARCHAR" />
+	    <result column="DEFERRED_FLAG" property="deferredFlag" jdbcType="VARCHAR" />
+	    <result column="CUG_FLAG" property="cugFlag" jdbcType="VARCHAR" />
+	    <result column="DISC_DSCR" property="discDscr" jdbcType="VARCHAR" />
+	    <result column="BONUS_DSCR" property="bonusDscr" jdbcType="VARCHAR" />
+	    <result column="TARIFF_DSCR" property="tariffDscr" jdbcType="VARCHAR" />
+	    <result column="CONTRACT_PERIOD" property="contractPeriod" jdbcType="INTEGER" />
+	    <result column="TREATMENT_PRICE" property="treatmentPrice" jdbcType="INTEGER" />
+	    <result column="TREATMENT_DAY" property="treatmentDay" jdbcType="INTEGER" />
+	    <result column="PARENT_PRODUCT_CD" property="parentProductCd" jdbcType="VARCHAR" />
+	    <result column="RSV_REG_DAY" property="rsvRegDay" jdbcType="INTEGER" />
+	    <result column="AUTO_EXP_DAY" property="autoExpDay" jdbcType="INTEGER" />
+	    <result column="PAID_CHG_DAY" property="paidChgDay" jdbcType="INTEGER" />
+	    <result column="BUNDLE_DEPOSIT_YN" property="bundleDepositYn" jdbcType="VARCHAR" />
+	    <result column="ZONE_FLAG" property="zoneFlag" jdbcType="VARCHAR" />
+	    <result column="CUG_MEMBER_COUNTER" property="cugMemberCounter" jdbcType="VARCHAR" />
+	    <result column="PRODUCT_SUB_TYPE" property="productSubType" jdbcType="VARCHAR" />
+	    <result column="NEXT_JOIN_PRODUCT" property="nextJoinProduct" jdbcType="VARCHAR" />
+	    <result column="SMS_PERIOD" property="smsPeriod" jdbcType="VARCHAR" />
+	    <result column="SHOT_PROD_NM" property="shotProdNm" jdbcType="VARCHAR" />
+	    <result column="EXT_PROD_CD" property="extProdCd" jdbcType="VARCHAR" />
+	    <result column="LIFE_CYCLE_SCHEME" property="lifeCycleScheme" jdbcType="VARCHAR" />
+	    <result column="CUST_KD_CD" property="custKdCd" jdbcType="VARCHAR" />
+	    <result column="EXPIRE_DATE" property="expireDate" jdbcType="VARCHAR" />
+	    <result column="EXPIRE_DATE_TYPE" property="expireDateType" jdbcType="VARCHAR" />
+	    <result column="CURRENCY" property="currency" jdbcType="VARCHAR" />
+	    <result column="NEXT_JOIN_CONFIRM" property="nextJoinConfirm" jdbcType="VARCHAR" />
+	    <result column="CUG_GROUP_TYPE" property="cugGroupType" jdbcType="VARCHAR" />
+	    <result column="CUG_CUSTOMER_TYPE" property="cugCustomerType" jdbcType="VARCHAR" />
+	    <result column="LOYALTY_POINT_FOR_SUBS" property="loyaltyPointForSubs" jdbcType="VARCHAR" />
+	    <result column="DEFERRED_CHANGING" property="deferredChanging" jdbcType="VARCHAR" />
+	    <result column="RESUBSCRIPTION_FLAG" property="resubscriptionFlag" jdbcType="VARCHAR" />
+	    <result column="SYS_CREATION_DATE" property="sysCreationDate" jdbcType="TIMESTAMP" />
+	    <result column="SYS_UPDATE_DATE" property="sysUpdateDate" jdbcType="TIMESTAMP" />
+	    <result column="OPERATOR_ID" property="operatorId" jdbcType="VARCHAR" />
+	    <result column="APPLICATION_ID" property="applicationId" jdbcType="VARCHAR" />
+	    <result column="DL_SERVICE_CODE" property="dlServiceCode" jdbcType="VARCHAR" />
+	    <result column="DL_UPDATE_STAMP" property="dlUpdateStamp" jdbcType="INTEGER" />
+	    <result column="EXPIRE_DATE_HOUR" property="expireDateHour" jdbcType="VARCHAR" />
+	    <result column="CUG_NEED_MEMBER_PRODUCT" property="cugNeedMemberProduct" jdbcType="VARCHAR" />
+	    <result column="RCRR_USE" property="rcrrUse" jdbcType="VARCHAR" />
+	    <result column="RCRR_PERIOD_TYPE" property="rcrrPeriodType" jdbcType="VARCHAR" />
+	    <result column="RECOMMEND_VAS" property="recommendVas" jdbcType="VARCHAR" />
+	    <result column="DEPOSIT_COND_FTR_CD" property="depositCondFtrCd" jdbcType="VARCHAR" />
+	    <result column="MIN_DEPOSIT" property="minDeposit" jdbcType="INTEGER" />
+	    <result column="PRODUCT_ALIAS_MN" property="productAliasMn" jdbcType="VARCHAR" />
+	    <result column="PRODUCT_ALIAS_EN" property="productAliasEn" jdbcType="VARCHAR" />
+	    <result column="PARAMETERIZED_IND" property="parameterizedInd" jdbcType="VARCHAR" />
+	    <result column="PROD_TYPE" property="prodType" jdbcType="VARCHAR" />
+	    <result column="PROD_SDATE" property="prodSdate" jdbcType="VARCHAR" />
+	    <result column="PROD_EDATE" property="prodEdate" jdbcType="VARCHAR" />
+	    <result column="PROD_STATUS" property="prodStatus" jdbcType="VARCHAR" />
+	    <result column="PROD_PRICE" property="prodPrice" jdbcType="INTEGER" />
+	    <result column="PROD_DESC" property="prodDesc" jdbcType="VARCHAR" />
+	    <result column="RATE_TYPE" property="rateType" jdbcType="VARCHAR" />
+	    <result column="DURATION" property="duration" jdbcType="INTEGER" />
+	    <result column="ATTRIBUTE_YN" property="attributeYn" jdbcType="VARCHAR" />
+	    <result column="ATTRIBUTE_VALUE" property="attributeValue" jdbcType="VARCHAR" />
+	    <result column="FREEVOD_COUNT" property="freevodCount" jdbcType="INTEGER" />
+	    <result column="PROD_CATEGORY" property="prodCategory" jdbcType="VARCHAR" />
+	    <result column="RELATED2STB_YN" property="related2stbYn" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List" >
+	    PROD_CD, MRKT_CD, SVC_DOMAIN, PROD_DV_CD, PROD_KD_CD, PROD_KD_DTL_CD, CUST_DV_CD, 
+	    VERSION, SALE_STRT_DTTM, SALE_END_DTTM, PROD_ID_CD, PROD_NAME, VALD_STRT_DT, VALD_END_DT, 
+	    PROD_PRTY, PROD_STATE_CD, DSCR, IS_BUNDLE, BILLING_CYCLE, MPS_DOMAIN, DEFERRED_FLAG, 
+	    CUG_FLAG, DISC_DSCR, BONUS_DSCR, TARIFF_DSCR, CONTRACT_PERIOD, TREATMENT_PRICE, TREATMENT_DAY, 
+	    PARENT_PRODUCT_CD, RSV_REG_DAY, AUTO_EXP_DAY, PAID_CHG_DAY, BUNDLE_DEPOSIT_YN, ZONE_FLAG, 
+	    CUG_MEMBER_COUNTER, PRODUCT_SUB_TYPE, NEXT_JOIN_PRODUCT, SMS_PERIOD, SHOT_PROD_NM, 
+	    EXT_PROD_CD, LIFE_CYCLE_SCHEME, CUST_KD_CD, EXPIRE_DATE, EXPIRE_DATE_TYPE, CURRENCY, 
+	    NEXT_JOIN_CONFIRM, CUG_GROUP_TYPE, CUG_CUSTOMER_TYPE, LOYALTY_POINT_FOR_SUBS, DEFERRED_CHANGING, 
+	    RESUBSCRIPTION_FLAG, SYS_CREATION_DATE, SYS_UPDATE_DATE, OPERATOR_ID, APPLICATION_ID, 
+	    DL_SERVICE_CODE, DL_UPDATE_STAMP, EXPIRE_DATE_HOUR, CUG_NEED_MEMBER_PRODUCT, RCRR_USE, 
+	    RCRR_PERIOD_TYPE, RECOMMEND_VAS, DEPOSIT_COND_FTR_CD, MIN_DEPOSIT, PRODUCT_ALIAS_MN, 
+	    PRODUCT_ALIAS_EN, PARAMETERIZED_IND, PROD_TYPE, PROD_SDATE, PROD_EDATE, PROD_STATUS, 
+	    PROD_PRICE, PROD_DESC, RATE_TYPE, DURATION, ATTRIBUTE_YN, ATTRIBUTE_VALUE, FREEVOD_COUNT, 
+	    PROD_CATEGORY, RELATED2STB_YN
+	</sql>
+	
+	<select id="getProducts" parameterType="AsSearchFilter" resultMap="ProdBaseResultMap">
+		SELECT
+			<include refid="Base_Column_List"/>
+		FROM aba_ps_prod
+		WHERE 1=1
+		<include refid="CommonSearchFilterQueryGeneration"/>
+		
+	</select>
+	
+	<select id="getProduct" parameterType="AsPsProd" resultMap="ProdBaseResultMap">
+		SELECT
+			<include refid="Base_Column_List"/>
+		FROM aba_ps_prod
+		WHERE prod_cd = #{prodCd}
+	</select>
+	
+	<select id="getProductsByChannel" parameterType="AsSearchFilter" resultMap="ProdBaseResultMap">
+		SELECT 
+			  b.MRKT_CD
+			, b.SVC_DOMAIN
+			, b.PROD_DV_CD
+			, b.PROD_KD_CD
+			, b.PROD_KD_DTL_CD
+			, b.CUST_DV_CD
+			, b.VERSION
+			, b.SALE_STRT_DTTM
+			, b.SALE_END_DTTM
+			, b.PROD_ID_CD
+			, b.PROD_NAME
+			, b.VALD_STRT_DT
+			, b.VALD_END_DT
+	    
+		FROM aba_pd_chnl_by_prod a, aba_ps_prod b
+		WHERE a.sale_chnl_cd = #{filterMap.channelId}
+		AND a.prod_cd = b.prod_cd
+		<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	
+	<delete id="batchDeleteFeaturesByProduct" parameterType="AsPsProd">
+		DELETE FROM aba_ps_prov_ftr_by_prod
+		WHERE prod_cd = #{prodCd}
+	</delete>
+	
+	<delete id="deleteFeaturesByProduct" parameterType="AsPsProvFtr">
+		DELETE FROM aba_ps_prov_ftr_by_prod
+		WHERE prod_cd = #{prod.prodCd}
+		AND trgt_ftr_cd = #{ftrCd}
+	</delete>
+	
+	<insert id="addProvFeatureByProduct" parameterType="AsPsProvFtr">
+		INSERT INTO aba_ps_prov_ftr_by_prod(
+			  prod_cd
+			, trgt_ftr_cd
+			, aply_flag
+			, sys_creation_date
+			, sys_update_date
+			, operator_id
+			, application_id
+			, dl_service_code
+			, dl_update_stamp
+		) VALUES(
+			  #{prod.prodCd}
+			, #{ftrCd}
+			, #{aplyFlag, jdbcType=VARCHAR}
+			, #{sysCreationDate}
+			, #{sysUpdateDate}
+			, #{operatorId}
+			, #{applicationId}
+			, 'addFeatureByProduct'
+			, ''
+		)		
+	</insert>
+	
+	<select id="getProvFeaturesByProd" parameterType="AsSearchFilter" resultType="AsPsProvFtr">
+		SELECT a.prod_cd 		prodCd
+			, a.TRGT_FTR_CD 	ftrCd
+			, b.SVC_DOMAIN 		svcDomain      
+			, b.NE_ID 			neId          
+			, b.SRC_TRGT_IND 	srcTrgtInd    
+			, b.IS_USER_DEFINE 	isUserDefine  
+			, b.IS_BSS_PROV 	isBssProv     
+			, b.MAX_PARAM_CNT 	maxParamCnt   
+			, b.DESCR	 		descr         
+			, b.COMMON_USE_FLAG commonUseFlag 
+			, b.IS_SUSPEND 		isSuspend     
+			, b.PROV_NE_ID 		provNeId      
+			, b.FTR_PRTY 		ftrPrty       
+			, a.APLY_FLAG		aplyFlag
+			, a.SYS_CREATION_DATE sysCreationDate
+			, a.SYS_UPDATE_DATE   sysUpdateDate 	
+			, a.OPERATOR_ID       operatorId 	
+			, a.APPLICATION_ID    applicationId
+		FROM aba_ps_prov_ftr_by_prod a, aba_ps_prov_ftr b
+		WHERE a.trgt_ftr_cd = b.ftr_cd
+		<if test="filterMap != null">AND a.prod_cd = #{filterMap.prodCd}</if>
+		<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	
+	<resultMap id="ProvFeatureBaseResultMap" type="AsPsProvFtr" >
+	    <id column="FTR_CD" property="ftrCd" jdbcType="VARCHAR" />
+	    <id column="SVC_DOMAIN" property="svcDomain" jdbcType="VARCHAR" />
+	    <id column="NE_ID" property="neId" jdbcType="VARCHAR" />
+	    <result column="SRC_TRGT_IND" property="srcTrgtInd" jdbcType="VARCHAR" />
+	    <result column="IS_USER_DEFINE" property="isUserDefine" jdbcType="VARCHAR" />
+	    <result column="IS_BSS_PROV" property="isBssProv" jdbcType="VARCHAR" />
+	    <result column="MAX_PARAM_CNT" property="maxParamCnt" jdbcType="INTEGER" />
+	    <result column="DESCR" property="descr" jdbcType="VARCHAR" />
+	    <result column="COMMON_USE_FLAG" property="commonUseFlag" jdbcType="VARCHAR" />
+	    <result column="IS_SUSPEND" property="isSuspend" jdbcType="VARCHAR" />
+	    <result column="PROV_NE_ID" property="provNeId" jdbcType="VARCHAR" />
+	    <result column="FTR_PRTY" property="ftrPrty" jdbcType="INTEGER" />
+	    <result column="FTR_KD_CD" property="ftrKdCd" jdbcType="VARCHAR" />
+	    <result column="APLY_FLAG" property="aplyFlag" jdbcType="VARCHAR" />
+	    <result column="SYS_CREATION_DATE" property="sysCreationDate" jdbcType="TIMESTAMP" />
+	    <result column="SYS_UPDATE_DATE" property="sysUpdateDate" jdbcType="TIMESTAMP" />
+	    <result column="OPERATOR_ID" property="operatorId" jdbcType="VARCHAR" />
+	    <result column="APPLICATION_ID" property="applicationId" jdbcType="VARCHAR" />
+	    <result column="DL_SERVICE_CODE" property="dlServiceCode" jdbcType="VARCHAR" />
+	    <result column="DL_UPDATE_STAMP" property="dlUpdateStamp" jdbcType="INTEGER" />
+  	</resultMap>
+  	
+  	<sql id="Prov_Ftr_Base_Column_List" >
+	    FTR_CD, SVC_DOMAIN, NE_ID, SRC_TRGT_IND, IS_USER_DEFINE, IS_BSS_PROV, MAX_PARAM_CNT, 
+	    DESCR, COMMON_USE_FLAG, IS_SUSPEND, PROV_NE_ID, FTR_PRTY, FTR_KD_CD, 
+	    SYS_CREATION_DATE, SYS_UPDATE_DATE, OPERATOR_ID, APPLICATION_ID, DL_SERVICE_CODE, DL_UPDATE_STAMP
+  	</sql>
+	<select id="getProvFeatures" parameterType="AsSearchFilter" resultMap="ProvFeatureBaseResultMap">
+		SELECT 
+			  <include refid="Prov_Ftr_Base_Column_List"/>
+		FROM aba_ps_prov_ftr
+		WHERE 1=1 <if test='filterMap != null and filterMap.prodCd != null and filterMap.prodCd eq "0"'>
+		<!-- AND ftr_cd NOT IN (SELECT trgt_ftr_cd FROM aba_ps_prov_ftr_by_prod WHERE prod_cd = #{filterMap.prodCd}) -->
+		AND src_trgt_ind = ‘T’ 
+		</if>
+		<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	
+	<select id="getProvFeature" parameterType="AsPsProvFtr" resultMap="ProvFeatureBaseResultMap">
+		SELECT 
+			  <include refid="Prov_Ftr_Base_Column_List"/>
+		FROM aba_ps_prov_ftr
+		WHERE ftr_cd = #{ftrCd}
+		AND ne_id = #{neId}
+	</select>
+	
+	<insert id="addProvFeatur" parameterType="AsPsProvFtr">
+		INSERT INTO aba_ps_prov_ftr (
+			  ftr_cd
+			, svc_domain
+			, ne_id
+			, src_trgt_ind
+			, is_user_define
+			, is_bss_prov
+			, max_param_cnt
+			, descr
+			, common_use_flag
+			, is_suspend
+			, prov_ne_id
+			, ftr_prty
+			, sys_creation_date
+			, sys_update_date
+			, operator_id
+			, application_id
+	        , dl_service_code
+	        , dl_update_stamp
+	        , ftr_kd_cd)
+	    VALUES (
+	    	  #{ftrCd,jdbcType=VARCHAR}
+	    	, #{svcDomain,jdbcType=VARCHAR}
+	    	, #{neId,jdbcType=VARCHAR} 
+	        , #{srcTrgtInd,jdbcType=VARCHAR}
+	        , #{isUserDefine,jdbcType=VARCHAR}
+	        , #{isBssProv,jdbcType=VARCHAR}
+	        , #{maxParamCnt,jdbcType=INTEGER}
+	        , #{descr,jdbcType=VARCHAR}
+	        , #{commonUseFlag,jdbcType=VARCHAR} 
+	        , #{isSuspend,jdbcType=VARCHAR}
+	        , #{provNeId,jdbcType=VARCHAR}
+	        , #{ftrPrty,jdbcType=INTEGER} 
+	        , #{sysCreationDate}
+	        , #{sysUpdateDate}
+	        , #{operatorId,jdbcType=VARCHAR} 
+	        , #{applicationId,jdbcType=VARCHAR}
+	        , 'addProvFeatur'
+	        , '0'
+	        , #{ftrKdCd,jdbcType=VARCHAR}
+		)
+	</insert>
+		
+	<update id="updateProvFeatur" parameterType="AsPsProvFtr">
+		UPDATE ABA_PS_PROV_FTR
+	    SET FTR_CD 			= #{ftrCd,jdbcType=VARCHAR},
+	      SVC_DOMAIN		= #{svcDomain,jdbcType=VARCHAR},
+	      NE_ID 			= #{neId,jdbcType=VARCHAR},
+	      SRC_TRGT_IND 		= #{srcTrgtInd,jdbcType=VARCHAR},
+	      IS_USER_DEFINE 	= #{isUserDefine,jdbcType=VARCHAR},
+	      IS_BSS_PROV 		= #{isBssProv,jdbcType=VARCHAR},
+	      MAX_PARAM_CNT 	= #{maxParamCnt,jdbcType=INTEGER},
+	      DESCR 			= #{descr,jdbcType=VARCHAR},
+	      COMMON_USE_FLAG 	= #{commonUseFlag,jdbcType=VARCHAR},
+	      IS_SUSPEND 		= #{isSuspend,jdbcType=VARCHAR},
+	      PROV_NE_ID 		= #{provNeId,jdbcType=VARCHAR},
+	      FTR_PRTY 			= #{ftrPrty,jdbcType=INTEGER},
+	      FTR_KD_CD 		= #{ftrKdCd,jdbcType=VARCHAR},
+	      SYS_UPDATE_DATE 	= #{sysUpdateDate,jdbcType=TIMESTAMP},
+	      OPERATOR_ID 		= #{operatorId,jdbcType=VARCHAR},
+	      APPLICATION_ID 	= #{applicationId,jdbcType=VARCHAR},
+	      DL_SERVICE_CODE 	= 'updateProvFeatur'
+	     WHERE ftr_cd = #{ftrCd}
+	     AND ne_id = #{neId}
+	</update>
+	
+	<delete id="deleteProvFeatur" parameterType="AsPsProvFtr">
+		DELETE FROM aba_ps_prov_ftr a
+		WHERE ftr_cd = #{ftrCd}
+		AND ne_id = #{neId}
+		AND NOT EXISTS (SELECT * FROM aba_ps_prov_ftr_by_prod WHERE trgt_ftr_cd = a.ftr_cd) <!-- prod에 맵핑된경우 삭제불가 -->
+	</delete>
+</mapper>

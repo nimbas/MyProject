@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="com.acube.pvs.mapper.op.ProvStatisticRepository">
+	
+	<sql id="CommonSearchFilterQueryGeneration">
+		<if test="filterCount > 0">
+		 	AND (
+		 	<choose>
+		 	<when test="filterOper != null and filterOper.groupOp eq 'OR'">
+		 		<foreach collection="searchFilters" separator="OR" item="filter" index="index">
+					<choose><when test='filter.type eq "=" or filter.type eq "!=" or filter.type eq "IN" or filter.type eq "NOT IN"'>${filter.name}</when><otherwise>UPPER(${filter.name})</otherwise></choose> ${filter.type} <choose><when test='filter.type eq "=" or filter.type eq "!="'>#{filter.value}</when><otherwise>${filter.value}</otherwise></choose> 
+				</foreach>
+		 	</when>
+		 	<otherwise>
+		 		<foreach collection="searchFilters" separator="AND" item="filter" index="index">
+					<choose><when test='filter.type eq "=" or filter.type eq "!=" or filter.type eq "IN" or filter.type eq "NOT IN"'>${filter.name}</when><otherwise>UPPER(${filter.name})</otherwise></choose> ${filter.type} <choose><when test='filter.type eq "=" or filter.type eq "!="'>#{filter.value}</when><otherwise>${filter.value}</otherwise></choose> 
+				</foreach>
+		 	</otherwise>
+		 	</choose>
+		 	)
+		</if>
+	</sql>
+  	
+  	<select id="getCsMsgStatistic" parameterType="AsSearchFilter" resultType="AsProvStatistic">
+	   
+		SELECT event_cd		eventCd
+		     , FC_LOOKUP_NAME (event_cd, 'EventCd', 'en') AS eventName		
+		     , NVL(S_CNT, 0)					AS sCnt  <!-- SUCCESS CNT -->
+			 , NVL(E_CNT, 0)					AS eCnt  <!-- ERROR CNT -->
+			 , NVL(R_CNT, 0)	
+			   + NVL(P_CNT, 0)  				AS pCnt  <!-- PROCESSING CNT -->
+			 , NVL(N_CNT, 0)    				AS nCnt  <!-- NOT YET CNT -->
+		  FROM (
+				SELECT  EVENT_CD            
+					  , STATUS_CD           
+					  , SUM(MIN_CNT) 			AS RES_COUNT
+				FROM ABA_PS_CS_MSG_VIEW
+				WHERE 1=1
+				<include refid="CommonSearchFilterQueryGeneration"/>
+				<if test="filterMap != null">
+				AND
+					<choose>
+					 	<when test=' filterMap.condition == "1" '>
+					    	SUBSTR(REQ_DT, 0, 8)  = #{filterMap.date}
+					    </when>
+					    <otherwise>
+					    	SUBSTR(REQ_DT, 0, 10) = #{filterMap.date}|| SUBSTR(#{filterMap.dateTime}, 0,2)
+					    </otherwise>
+					 </choose>
+				 </if>
+				GROUP BY EVENT_CD, STATUS_CD
+		)	A
+		 PIVOT ( SUM(RES_COUNT) AS CNT FOR (STATUS_CD) IN (
+		               'S' AS s
+					 , 'E' AS e
+					 , 'R' AS r
+					 , 'N' AS n
+					 , 'P' AS p 
+				  )
+		 )
+  	</select>
+	
+		
+	<select id="getNeMsgStatistic" parameterType="AsSearchFilter" resultType="AsProvNeStatistic">
+  	 
+  	 	SELECT event_cd 						AS eventCd	
+  	 	     , FC_LOOKUP_NAME (event_cd, 'EventCd', 'en') AS eventName
+  	 	     , TARGET_NE		                AS ne
+		     , NVL(S_CNT, 0)	                AS sCnt  <!-- SUCCESS CNT -->
+			 , NVL(E_CNT, 0)	                AS eCnt  <!-- ERROR CNT -->
+			 , NVL(R_CNT, 0)	                
+			   + NVL(P_CNT, 0)                  AS pCnt  <!-- PROCESSING CNT -->
+			 , NVL(N_CNT, 0)                    AS nCnt  <!-- NOT YET CNT -->
+		  FROM (
+				SELECT  EVENT_CD       
+				      , TARGET_NE     
+					  , STATUS_CD           
+					  <!--, COUNT(EVENT_CD)     AS RES_COUNT -->
+					  , SUM(MIN_CNT) 			AS RES_COUNT
+				  FROM ABA_PS_NE_MSG_VIEW
+				 WHERE 1=1
+				<include refid="CommonSearchFilterQueryGeneration"/>
+				<if test="filterMap != null"> 
+				AND
+				 	<choose>
+					 	<when test=' filterMap.condition == "1" '>
+					    	  SUBSTR(REQ_DT, 0, 8)  = #{filterMap.date}
+					    </when>
+					    <otherwise>
+					    	  SUBSTR(REQ_DT, 0, 10) = #{filterMap.date}||SUBSTR(#{filterMap.dateTime}, 0,2)
+					    </otherwise>
+					</choose>
+					<if test="filterMap.neCode != null">AND target_ne = #{filterMap.neCode}</if>
+				</if>
+				GROUP BY TARGET_NE, EVENT_CD, STATUS_CD
+		)	A
+		 PIVOT ( SUM(RES_COUNT) AS CNT FOR (STATUS_CD) IN (
+		               'S' AS s
+					 , 'E' AS e
+					 , 'R' AS r
+					 , 'N' AS n
+					 , 'P' AS p 
+				  )
+		 )
+  	</select>
+	
+	
+	<select id="getCsMsgDataForChart" parameterType="AsSearchFilter" resultType="AsProvStatistic">
+		SELECT req_date			AS reqDate
+			 , NVL(S_CNT, 0)	AS sCnt
+			 , NVL(E_CNT, 0)	AS eCnt
+			 , NVL(R_CNT, 0)	
+			   + NVL(P_CNT, 0)  AS pCnt
+			 , NVL(N_CNT, 0)    AS nCnt
+		  FROM (
+				SELECT
+				<if test="filterMap != null">
+					<choose> 
+						<when test=' filterMap.condition == "1" '>	<!-- 특정일자 : 1시간 간격 -->
+							TO_CHAR(TO_DATE(SUBSTR(REQ_DT, 0, 12), 'YYYYMMDDHH24MI'), 'HH24') 
+																					AS REQ_DATE
+						</when>
+						<when test=' filterMap.condition == "3" '>	<!-- 시간     : 5분간격 -->
+						  ( CASE WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 5  THEN '05'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 10 THEN '10'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 15 THEN '15'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 20 THEN '20'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 25 THEN '25'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 30 THEN '30'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 35 THEN '35'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 40 THEN '40'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 45 THEN '45'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 50 THEN '50'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 55 THEN '55'
+								 ELSE '60'
+							 END )													AS REQ_DATE
+					  	</when>
+					  	<otherwise>							<!-- 특정기간 : 1일 간격 -->
+					  		TO_CHAR(TO_DATE(SUBSTR(REQ_DT, 0, 12), 'YYYYMMDDHH24MI'), 'MMDD') 
+					  																AS REQ_DATE
+					  	</otherwise>
+					</choose>
+				</if>
+						 , STATUS_CD          										AS STATUS_CD
+						 <!-- , COUNT(EVENT_CD)     										AS RES_COUNT -->
+						 , SUM(MIN_CNT) 			AS RES_COUNT
+				  FROM ABA_PS_CS_MSG_VIEW
+				 WHERE 1=1
+				 <include refid="CommonSearchFilterQueryGeneration"/>
+				 <if test="filterMap != null">
+				 AND
+				 	<choose>
+						<when test=' filterMap.condition == "1" '> <!-- 특정일자에 대한 조회 -->
+							SUBSTR(REQ_DT, 0, 8)  = #{filterMap.date}
+						</when>
+						<when test=' filterMap.condition == "3" '> <!-- 특정시간에 대한 조회 -->
+							SUBSTR(REQ_DT, 0, 10) = #{filterMap.date}||SUBSTR(#{filterMap.dateTime}, 0,2)
+						</when>
+						<otherwise> 					 <!-- otherwise조건은 없음. 나중에 사용할지 몰라서 놔둠. 상용시 화면 조건도 추가해줄것 -->
+						  	REQ_DT BETWEEN #{filterMap.startDate}||'0000'
+									   AND #{filterMap.endDate}  ||'2359'
+						</otherwise>
+				 	</choose>
+					 <choose> 
+						<when test=' filterMap.condition == "1" '>	<!-- 특정일자에 대한 조회 : 1시간 간격 	-->
+							GROUP BY TO_CHAR(TO_DATE(SUBSTR(REQ_DT, 0, 12), 'YYYYMMDDHH24MI'), 'HH24')
+						</when>
+						<when test=' filterMap.condition == "3" '>	<!-- 특정시간에 대한 조회 : 5분간격 	-->
+							GROUP BY ( CASE WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 5  THEN '05'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 10 THEN '10'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 15 THEN '15'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 20 THEN '20'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 25 THEN '25'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 30 THEN '30'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 35 THEN '35'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 40 THEN '40'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 45 THEN '45'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 50 THEN '50'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 55 THEN '55'
+									        ELSE '60'
+								 		END )
+					  	</when>
+					  	<otherwise>							<!-- otherwise조건은 없음. 나중에 사용할지 몰라서 놔둠. 상용시 화면 조건도 추가해줄것 -->
+						  	GROUP BY TO_CHAR(TO_DATE(SUBSTR(REQ_DT, 0, 12), 'YYYYMMDDHH24MI'), 'MMDD')
+					  	</otherwise>
+					</choose>
+				</if> , STATUS_CD
+		)	A
+		 PIVOT ( SUM(RES_COUNT) AS CNT FOR (STATUS_CD) IN (
+					   'S' AS s
+					 , 'E' AS e
+					 , 'R' AS r
+					 , 'N' AS n
+					 , 'P' AS p 
+				  )
+		 ) ORDER BY 1
+	</select>
+	
+	<select id="getNeMsgDataForChart" parameterType="AsSearchFilter" resultType="AsProvNeStatistic">
+		SELECT REQ_DATE			AS reqDate
+			 , NVL(S_CNT, 0)	AS sCnt
+			 , NVL(E_CNT, 0)	AS eCnt
+			 , NVL(R_CNT, 0)	
+			   + NVL(P_CNT, 0)  AS pCnt
+			 , NVL(N_CNT, 0)    AS nCnt
+		  FROM (
+				SELECT
+					<if test="filterMap != null">
+					<choose> 
+						<when test=' filterMap.condition == "1" '>	<!-- 특정일자에 대한 조회 : 1시간 간격 	-->
+							TO_CHAR(TO_DATE(SUBSTR(REQ_DT, 0, 12), 'YYYYMMDDHH24MI'), 'HH24') 
+																					AS REQ_DATE
+						</when>
+						<when test=' filterMap.condition == "3" '>	<!-- 특정시간에 대한 조회 : 5분간격 	-->
+						  ( CASE WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 5  THEN '05'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 10 THEN '10'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 15 THEN '15'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 20 THEN '20'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 25 THEN '25'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 30 THEN '30'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 35 THEN '35'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 40 THEN '40'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 45 THEN '45'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 50 THEN '50'
+								 WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 55 THEN '55'
+								 ELSE '60'
+							 END )													AS REQ_DATE
+					  	</when>
+					  	<otherwise>							<!-- otherwise조건은 없음. 나중에 사용할지 몰라서 놔둠. 상용시 화면 조건도 추가해줄것 -->
+					  		TO_CHAR(TO_DATE(SUBSTR(REQ_DT, 0, 12), 'YYYYMMDDHH24MI'), 'MMDD') 
+					  																AS REQ_DATE
+					  	</otherwise>
+					</choose>
+					</if>
+						 , STATUS_CD          										AS STATUS_CD
+						 , SUM(MIN_CNT) 			AS RES_COUNT
+				  FROM ABA_PS_NE_MSG_VIEW
+				 WHERE 1=1
+				 <include refid="CommonSearchFilterQueryGeneration"/>
+				 <if test="filterMap != null">
+				 AND
+				 	<choose>
+						<when test=' filterMap.condition == "1" '>	<!-- 특정일자에 대한 조회 : 1시간 간격 	-->
+							SUBSTR(REQ_DT, 0, 8)  = #{filterMap.date}
+						</when>
+						<when test=' filterMap.condition == "3" '>	<!-- 특정시간에 대한 조회 : 5분 간격 	-->
+							SUBSTR(REQ_DT, 0, 10) = #{filterMap.date}||SUBSTR(#{filterMap.dateTime}, 0,2)
+						</when>
+						<otherwise>							<!-- otherwise조건은 없음. 나중에 사용할지 몰라서 놔둠. 상용시 화면 조건도 추가해줄것 -->
+							REQ_DT BETWEEN #{filterMap.startDate}||'0000'
+									   AND #{filterMap.endDate}  ||'2359'
+						</otherwise>
+				 	</choose>
+				 	<if test="filterMap.neCode != null">AND target_ne = #{filterMap.neCode}</if>
+					<choose> 
+						<when test=' filterMap.condition == "1" '>	<!-- 특정일자에 대한 조회 : 1시간 간격 	-->
+							GROUP BY TO_CHAR(TO_DATE(SUBSTR(REQ_DT, 0, 12), 'YYYYMMDDHH24MI'), 'HH24') 
+						</when>
+						<when test=' filterMap.condition == "3" '>	<!-- 특정시간에 대한 조회 : 5분간격 	-->
+							GROUP BY ( CASE WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 5  THEN '05'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 10 THEN '10'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 15 THEN '15'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 20 THEN '20'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 25 THEN '25'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 30 THEN '30'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 35 THEN '35'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 40 THEN '40'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 45 THEN '45'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 50 THEN '50'
+									        WHEN TO_NUMBER(SUBSTR(REQ_DT, 11, 2)) BETWEEN 0 AND 55 THEN '55'
+									        ELSE '60'
+								 		END )
+					  	</when>
+					  	<otherwise> 						<!-- otherwise조건은 없음. 나중에 사용할지 몰라서 놔둠. 상용시 화면 조건도 추가해줄것 -->
+						  	GROUP BY TO_CHAR(TO_DATE(SUBSTR(REQ_DT, 0, 12), 'YYYYMMDDHH24MI'), 'MMDD') 
+					  	</otherwise>
+					</choose>
+				</if> , STATUS_CD
+		)	A
+		 PIVOT ( SUM(RES_COUNT) AS CNT FOR (STATUS_CD) IN (
+					   'S' AS s
+					 , 'E' AS e
+					 , 'R' AS r
+					 , 'N' AS n
+					 , 'P' AS p 
+				  )
+		 ) ORDER BY 1
+	</select>
+	<select id="getNeCodeList" resultType="AsLookupCode">
+		SELECT NE_ID AS code , NE_ID AS meaning FROM ABA_PS_PROV_NE_INFO
+	</select>
+	
+	<select id="getCurrentCsStatistic" resultType="AsProvStatistic">
+		SELECT event_cd			eventCd
+		     , FC_LOOKUP_NAME (event_cd, 'EventCd', 'en') AS eventName		
+		     , NVL(S_CNT, 0)					AS sCnt  <!-- SUCCESS CNT -->
+			 , NVL(E_CNT, 0)					AS eCnt  <!-- ERROR CNT -->
+			 , NVL(R_CNT, 0) + NVL(P_CNT, 0)  	AS pCnt  <!-- PROCESSING CNT -->
+			 , NVL(N_CNT, 0)    				AS nCnt  <!-- NOT YET CNT -->
+		  FROM (
+				SELECT  EVENT_CD            
+					  , STATUS_CD           
+					  , COUNT(EVENT_CD)     AS RES_COUNT
+				  FROM ABA_PS_CS_MESSAGE
+				 WHERE REQ_DT BETWEEN TO_CHAR(#{curDate}-1/24, 'YYYYMMDDHH24MISS') AND TO_CHAR(#{curDate}, 'YYYYMMDDHH24MISS')
+				GROUP BY EVENT_CD, STATUS_CD
+				ORDER BY EVENT_CD
+		)	A
+		 PIVOT ( SUM(RES_COUNT) AS CNT FOR (STATUS_CD) IN (
+		               'S' AS s
+					 , 'E' AS e
+					 , 'R' AS r
+					 , 'N' AS n
+					 , 'P' AS p 
+				  )
+		 )
+  	</select>
+
+	<select id="getCurrentMsgDataForChart" resultType="AsProvStatistic">
+		 SELECT  
+		        TO_CHAR(S1.REQ_DATE, 'YYYYMMDDHH24MISS')   AS reqDate
+		        /*S1.REQ_DATE*/
+			  , NVL(S_CNT, 0)							   AS sCnt
+			  , NVL(E_CNT, 0)							   AS eCnt
+			  , NVL(R_CNT, 0) + NVL(P_CNT, 0)  			   AS pCnt
+			  , NVL(N_CNT, 0)    						   AS nCnt
+		  FROM (
+		  		SELECT (#{curDate}-(1/24)) + (LEVEL*5 *(1/24/60)) AS REQ_DATE
+		  		  FROM DUAL
+		  	    CONNECT BY LEVEL <![CDATA[<=]]>12
+		     ) S1,
+		  	 (
+		  		SELECT REQ_DATE
+		  		     , S_CNT
+		  		     , E_CNT
+		  		     , R_CNT 
+		  		     , P_CNT
+		  		     , N_CNT
+		  		  FROM (  
+		  			 SELECT ( CASE WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 0  AND 5  THEN  START_DATE+(5  * (1/24/60))
+		  						   WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 5  AND 10 THEN  START_DATE+(10 * (1/24/60))	
+		  						   WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 10 AND 15 THEN  START_DATE+(15 * (1/24/60))
+		  						   WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 15 AND 20 THEN  START_DATE+(20 * (1/24/60))
+		  						   WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 20 AND 25 THEN  START_DATE+(25 * (1/24/60))
+		  						   WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 25 AND 30 THEN  START_DATE+(30 * (1/24/60))
+		  						   WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 30 AND 35 THEN  START_DATE+(35 * (1/24/60))
+		  						   WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 35 AND 40 THEN  START_DATE+(40 * (1/24/60))
+		  						   WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 40 AND 45 THEN  START_DATE+(45 * (1/24/60))
+		  						   WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 45 AND 50 THEN  START_DATE+(50 * (1/24/60))
+		  						   WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 50 AND 55 THEN  START_DATE+(55 * (1/24/60))
+		  						   ELSE START_DATE+(60 * (1/24/60))
+		  				 	 END )													AS REQ_DATE
+		  			   	   , STATUS_CD          										
+		  			       , COUNT(EVENT_CD)     									AS RES_COUNT
+		  			   FROM ( 
+		  					SELECT (#{curDate}-(1/24))   		AS START_DATE
+		  						 , TO_DATE(REQ_DT, 'YYYYMMDDHH24MISS')				AS REQ_DTTM
+		  						 , STATUS_CD
+		  						 , EVENT_CD
+		  					 FROM ABA_PS_CS_MESSAGE
+		  					WHERE REQ_DT BETWEEN TO_CHAR((#{curDate}-(1/24)), 'YYYYMMDDHH24MISS') AND TO_CHAR(#{curDate}, 'YYYYMMDDHH24MISS')
+		  			  )
+		  			  GROUP BY ( CASE WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 0  AND 5  THEN  START_DATE+(5  * (1/24/60))
+		  							  WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 5  AND 10 THEN  START_DATE+(10 * (1/24/60))
+		  							  WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 10 AND 15 THEN  START_DATE+(15 * (1/24/60))
+		  							  WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 15 AND 20 THEN  START_DATE+(20 * (1/24/60))
+		  							  WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 20 AND 25 THEN  START_DATE+(25 * (1/24/60))
+		  							  WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 25 AND 30 THEN  START_DATE+(30 * (1/24/60))
+		  							  WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 30 AND 35 THEN  START_DATE+(35 * (1/24/60))
+		  							  WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 35 AND 40 THEN  START_DATE+(40 * (1/24/60))
+		  							  WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 40 AND 45 THEN  START_DATE+(45 * (1/24/60))
+		  							  WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 45 AND 50 THEN  START_DATE+(50 * (1/24/60))
+		  							  WHEN (REQ_DTTM - START_DATE) * 24 * 60  BETWEEN 50 AND 55 THEN  START_DATE+(55 * (1/24/60))
+		  							  ELSE START_DATE+(60 * (1/24/60))
+		  				          END )
+		  				        , STATUS_CD
+		  		  )	A
+				  PIVOT ( SUM(RES_COUNT) AS CNT FOR (STATUS_CD) IN (
+		  							   'S' AS s
+		  							 , 'E' AS e
+		  							 , 'R' AS r
+		  							 , 'N' AS n
+		  							 , 'P' AS p 
+		  			    )
+		  		  )
+		  	) S2
+		 WHERE S1.REQ_DATE = S2.REQ_DATE(+)
+		 ORDER BY 1
+	</select>
+	
+	<select id="getCurrentErrorMessage" resultType="AsPsCsMessage">
+		SELECT  pv_req_seq_no 		pvReqSeqNo	 
+			  , event_cd			eventCd     
+			  , FC_LOOKUP_NAME (event_cd, 'EventCd', 'en') AS eventName	 
+		 	  , ENTR_NO          	entrNo
+			  , CAS_ID           	casId
+			  , MAC_ADDRESS      	macAddress
+			  , STB_MODEL        	stbModel
+			  , STATUS_CD  			statusCd
+			  , FC_LOOKUP_NAME (status_cd, 'StatusCd', 'en') AS statusName
+			  , REQ_DT				reqDt                
+			  , RETURN_DT           returnDt  
+			  , RESULT_CODE         resultCode
+			  , RESULT_MSG          resultMsg 
+		  FROM ABA_PS_CS_MESSAGE
+		 WHERE REQ_DT BETWEEN TO_CHAR(#{curDate}-1/24, 'YYYYMMDDHH24MISS') AND TO_CHAR(#{curDate}, 'YYYYMMDDHH24MISS')
+		 AND EVENT_CD = #{eventCd}
+  	</select>
+</mapper>

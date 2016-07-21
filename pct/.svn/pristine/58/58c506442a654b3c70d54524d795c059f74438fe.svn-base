@@ -1,0 +1,14 @@
+package com.acube.sub.repository;
+
+import java.util.List;
+
+import com.acube.common.domain.code.LookupCode;
+import com.acube.sub.domain.Entrance;
+
+public interface CustomerRepository {
+	
+	public Entrance getCustomerGradeFromCust(Entrance entrance) ;
+	
+	public List<LookupCode> appendCache(String cacheName, LookupCode lookupCode);
+	
+}
