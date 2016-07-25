@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="com.acube.pvs.mapper.ProdFeatureRepository">
+	<sql id="CommonSearchFilterQueryGeneration">
+		<if test="filterCount > 0">
+		 	AND (
+		 	<choose>
+		 	<when test="filterOper != null and filterOper.groupOp eq 'OR'">
+		 		<foreach collection="searchFilters" separator="OR" item="filter" index="index">
+					<choose><when test='filter.type eq "=" or filter.type eq "!=" or filter.type eq "IN" or filter.type eq "NOT IN"'>${filter.name}</when><otherwise>UPPER(${filter.name})</otherwise></choose> ${filter.type} <choose><when test='filter.type eq "=" or filter.type eq "!="'>#{filter.value}</when><otherwise>${filter.value}</otherwise></choose> 
+				</foreach>
+		 	</when>
+		 	<otherwise>
+		 		<foreach collection="searchFilters" separator="AND" item="filter" index="index">
+					<choose><when test='filter.type eq "=" or filter.type eq "!=" or filter.type eq "IN" or filter.type eq "NOT IN"'>${filter.name}</when><otherwise>UPPER(${filter.name})</otherwise></choose> ${filter.type} <choose><when test='filter.type eq "=" or filter.type eq "!="'>#{filter.value}</when><otherwise>${filter.value}</otherwise></choose> 
+				</foreach>
+		 	</otherwise>
+		 	</choose>
+		 	)
+		</if>
+	</sql>
+	
+	<resultMap id="ProdBaseResultMap" type="AsPsProd" >
+	    <id column="PROD_CD" property="prodCd" jdbcType="VARCHAR" />
+	    <result column="MRKT_CD" property="mrktCd" jdbcType="VARCHAR" />
+	    <result column="SVC_DOMAIN" property="svcDomain" jdbcType="VARCHAR" />
+	    <result column="PROD_DV_CD" property="prodDvCd" jdbcType="VARCHAR" />
+	    <result column="PROD_KD_CD" property="prodKdCd" jdbcType="VARCHAR" />
+	    <result column="PROD_KD_DTL_CD" property="prodKdDtlCd" jdbcType="VARCHAR" />
+	    <result column="CUST_DV_CD" property="custDvCd" jdbcType="VARCHAR" />
+	    <result column="VERSION" property="version" jdbcType="VARCHAR" />
+	    <result column="SALE_STRT_DTTM" property="saleStrtDttm" jdbcType="TIMESTAMP" />
+	    <result column="SALE_END_DTTM" property="saleEndDttm" jdbcType="TIMESTAMP" />
+	    <result column="PROD_ID_CD" property="prodIdCd" jdbcType="VARCHAR" />
+	    <result column="PROD_NAME" property="prodName" jdbcType="VARCHAR" />
+	    <result column="VALD_STRT_DT" property="valdStrtDt" jdbcType="TIMESTAMP" />
+	    <result column="VALD_END_DT" property="valdEndDt" jdbcType="TIMESTAMP" />
+	    <result column="PROD_PRTY" property="prodPrty" jdbcType="INTEGER" />
+	    <result column="PROD_STATE_CD" property="prodStateCd" jdbcType="VARCHAR" />
+	    <result column="DSCR" property="dscr" jdbcType="VARCHAR" />
+	    <result column="IS_BUNDLE" property="isBundle" jdbcType="INTEGER" />
+	    <result column="BILLING_CYCLE" property="billingCycle" jdbcType="INTEGER" />
+	    <result column="MPS_DOMAIN" property="mpsDomain" jdbcType="VARCHAR" />
+	    <result column="DEFERRED_FLAG" property="deferredFlag" jdbcType="VARCHAR" />
+	    <result column="CUG_FLAG" property="cugFlag" jdbcType="VARCHAR" />
+	    <result column="DISC_DSCR" property="discDscr" jdbcType="VARCHAR" />
+	    <result column="BONUS_DSCR" property="bonusDscr" jdbcType="VARCHAR" />
+	    <result column="TARIFF_DSCR" property="tariffDscr" jdbcType="VARCHAR" />
+	    <result column="CONTRACT_PERIOD" property="contractPeriod" jdbcType="INTEGER" />
+	    <result column="TREATMENT_PRICE" property="treatmentPrice" jdbcType="INTEGER" />
+	    <result column="TREATMENT_DAY" property="treatmentDay" jdbcType="INTEGER" />
+	    <result column="PARENT_PRODUCT_CD" property="parentProductCd" jdbcType="VARCHAR" />
+	    <result column="RSV_REG_DAY" property="rsvRegDay" jdbcType="INTEGER" />
+	    <result column="AUTO_EXP_DAY" property="autoExpDay" jdbcType="INTEGER" />
+	    <result column="PAID_CHG_DAY" property="paidChgDay" jdbcType="INTEGER" />
+	    <result column="BUNDLE_DEPOSIT_YN" property="bundleDepositYn" jdbcType="VARCHAR" />
+	    <result column="ZONE_FLAG" property="zoneFlag" jdbcType="VARCHAR" />
+	    <result column="CUG_MEMBER_COUNTER" property="cugMemberCounter" jdbcType="VARCHAR" />
+	    <result column="PRODUCT_SUB_TYPE" property="productSubType" jdbcType="VARCHAR" />
+	    <result column="NEXT_JOIN_PRODUCT" property="nextJoinProduct" jdbcType="VARCHAR" />
+	    <result column="SMS_PERIOD" property="smsPeriod" jdbcType="VARCHAR" />
+	    <result column="SHOT_PROD_NM" property="shotProdNm" jdbcType="VARCHAR" />
+	    <result column="EXT_PROD_CD" property="extProdCd" jdbcType="VARCHAR" />
+	    <result column="LIFE_CYCLE_SCHEME" property="lifeCycleScheme" jdbcType="VARCHAR" />
+	    <result column="CUST_KD_CD" property="custKdCd" jdbcType="VARCHAR" />
+	    <result column="EXPIRE_DATE" property="expireDate" jdbcType="VARCHAR" />
+	    <result column="EXPIRE_DATE_TYPE" property="expireDateType" jdbcType="VARCHAR" />
+	    <result column="CURRENCY" property="currency" jdbcType="VARCHAR" />
+	    <result column="NEXT_JOIN_CONFIRM" property="nextJoinConfirm" jdbcType="VARCHAR" />
+	    <result column="CUG_GROUP_TYPE" property="cugGroupType" jdbcType="VARCHAR" />
+	    <result column="CUG_CUSTOMER_TYPE" property="cugCustomerType" jdbcType="VARCHAR" />
+	    <result column="LOYALTY_POINT_FOR_SUBS" property="loyaltyPointForSubs" jdbcType="VARCHAR" />
+	    <result column="DEFERRED_CHANGING" property="deferredChanging" jdbcType="VARCHAR" />
+	    <result column="RESUBSCRIPTION_FLAG" property="resubscriptionFlag" jdbcType="VARCHAR" />
+	    <result column="SYS_CREATION_DATE" property="sysCreationDate" jdbcType="TIMESTAMP" />
+	    <result column="SYS_UPDATE_DATE" property="sysUpdateDate" jdbcType="TIMESTAMP" />
+	    <result column="OPERATOR_ID" property="operatorId" jdbcType="VARCHAR" />
+	    <result column="APPLICATION_ID" property="applicationId" jdbcType="VARCHAR" />
+	    <result column="DL_SERVICE_CODE" property="dlServiceCode" jdbcType="VARCHAR" />
+	    <result column="DL_UPDATE_STAMP" property="dlUpdateStamp" jdbcType="INTEGER" />
+	    <result column="EXPIRE_DATE_HOUR" property="expireDateHour" jdbcType="VARCHAR" />
+	    <result column="CUG_NEED_MEMBER_PRODUCT" property="cugNeedMemberProduct" jdbcType="VARCHAR" />
+	    <result column="RCRR_USE" property="rcrrUse" jdbcType="VARCHAR" />
+	    <result column="RCRR_PERIOD_TYPE" property="rcrrPeriodType" jdbcType="VARCHAR" />
+	    <result column="RECOMMEND_VAS" property="recommendVas" jdbcType="VARCHAR" />
+	    <result column="DEPOSIT_COND_FTR_CD" property="depositCondFtrCd" jdbcType="VARCHAR" />
+	    <result column="MIN_DEPOSIT" property="minDeposit" jdbcType="INTEGER" />
+	    <result column="PRODUCT_ALIAS_MN" property="productAliasMn" jdbcType="VARCHAR" />
+	    <result column="PRODUCT_ALIAS_EN" property="productAliasEn" jdbcType="VARCHAR" />
+	    <result column="PARAMETERIZED_IND" property="parameterizedInd" jdbcType="VARCHAR" />
+	    <result column="PROD_TYPE" property="prodType" jdbcType="VARCHAR" />
+	    <result column="PROD_SDATE" property="prodSdate" jdbcType="VARCHAR" />
+	    <result column="PROD_EDATE" property="prodEdate" jdbcType="VARCHAR" />
+	    <result column="PROD_STATUS" property="prodStatus" jdbcType="VARCHAR" />
+	    <result column="PROD_PRICE" property="prodPrice" jdbcType="INTEGER" />
+	    <result column="PROD_DESC" property="prodDesc" jdbcType="VARCHAR" />
+	    <result column="RATE_TYPE" property="rateType" jdbcType="VARCHAR" />
+	    <result column="DURATION" property="duration" jdbcType="INTEGER" />
+	    <result column="ATTRIBUTE_YN" property="attributeYn" jdbcType="VARCHAR" />
+	    <result column="ATTRIBUTE_VALUE" property="attributeValue" jdbcType="VARCHAR" />
+	    <result column="FREEVOD_COUNT" property="freevodCount" jdbcType="INTEGER" />
+	    <result column="PROD_CATEGORY" property="prodCategory" jdbcType="VARCHAR" />
+	    <result column="RELATED2STB_YN" property="related2stbYn" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<sql id="Base_Column_List" >
+	    PROD_CD, MRKT_CD, SVC_DOMAIN, PROD_DV_CD, PROD_KD_CD, PROD_KD_DTL_CD, CUST_DV_CD, 
+	    VERSION, SALE_STRT_DTTM, SALE_END_DTTM, PROD_ID_CD, PROD_NAME, VALD_STRT_DT, VALD_END_DT, 
+	    PROD_PRTY, PROD_STATE_CD, DSCR, IS_BUNDLE, BILLING_CYCLE, MPS_DOMAIN, DEFERRED_FLAG, 
+	    CUG_FLAG, DISC_DSCR, BONUS_DSCR, TARIFF_DSCR, CONTRACT_PERIOD, TREATMENT_PRICE, TREATMENT_DAY, 
+	    PARENT_PRODUCT_CD, RSV_REG_DAY, AUTO_EXP_DAY, PAID_CHG_DAY, BUNDLE_DEPOSIT_YN, ZONE_FLAG, 
+	    CUG_MEMBER_COUNTER, PRODUCT_SUB_TYPE, NEXT_JOIN_PRODUCT, SMS_PERIOD, SHOT_PROD_NM, 
+	    EXT_PROD_CD, LIFE_CYCLE_SCHEME, CUST_KD_CD, EXPIRE_DATE, EXPIRE_DATE_TYPE, CURRENCY, 
+	    NEXT_JOIN_CONFIRM, CUG_GROUP_TYPE, CUG_CUSTOMER_TYPE, LOYALTY_POINT_FOR_SUBS, DEFERRED_CHANGING, 
+	    RESUBSCRIPTION_FLAG, SYS_CREATION_DATE, SYS_UPDATE_DATE, OPERATOR_ID, APPLICATION_ID, 
+	    DL_SERVICE_CODE, DL_UPDATE_STAMP, EXPIRE_DATE_HOUR, CUG_NEED_MEMBER_PRODUCT, RCRR_USE, 
+	    RCRR_PERIOD_TYPE, RECOMMEND_VAS, DEPOSIT_COND_FTR_CD, MIN_DEPOSIT, PRODUCT_ALIAS_MN, 
+	    PRODUCT_ALIAS_EN, PARAMETERIZED_IND, PROD_TYPE, PROD_SDATE, PROD_EDATE, PROD_STATUS, 
+	    PROD_PRICE, PROD_DESC, RATE_TYPE, DURATION, ATTRIBUTE_YN, ATTRIBUTE_VALUE, FREEVOD_COUNT, 
+	    PROD_CATEGORY,RELATED2STB_YN
+	</sql>
+	
+	<sql id="productListColumn">
+		PROD_CD                                      AS         prodCd
+		,MRKT_CD                                     AS 		mrktCd
+		,MRKT_CD || ' ' || FC_LOOKUP_NAME(MRKT_CD,'SvcOperator','en') AS             mrktNm  
+		,FC_LOOKUP_NAME(SVC_DOMAIN,'SvcDomain','en') AS         svcDomain  
+		,PROD_DV_CD                                  AS 		prodDvCd
+        ,PROD_DV_CD || ' ' || FC_LOOKUP_NAME(PROD_DV_CD,'BillType','en') AS             prodDvNm 
+		,PROD_KD_CD                                  AS 		prodKdCd
+        ,PROD_DV_CD || ' ' || FC_LOOKUP_NAME(PROD_KD_CD,'CsPrdType','en') AS              prodKdNm
+		,PROD_KD_DTL_CD                              AS 		prodKdDtlCd 
+        ,PROD_DV_CD || ' ' || FC_LOOKUP_NAME(PROD_KD_DTL_CD,'PROD_KD_DTL_CD','en') AS   prodKdDtlNm  
+		,CUST_DV_CD                                  AS 		custDvCd  
+        ,CUST_DV_CD || ' ' || FC_LOOKUP_NAME(CUST_DV_CD,'CustDvCd4Prod','en') AS        custDvNm     
+		,VERSION                                     AS 		version      
+		,TO_CHAR(SALE_STRT_DTTM, 'YYYY-MM-DD HH24:MI:SS')        AS 		saleStrtDttm 
+		,TO_CHAR(SALE_END_DTTM , 'YYYY-MM-DD HH24:MI:SS')        AS 		saleEndDttm  
+		,PROD_ID_CD                                  AS 		prodIdCd
+		,PROD_NAME                                   AS 		prodName
+		,PRODUCT_ALIAS_MN                            AS 		prodAliasName_mn
+		,PRODUCT_ALIAS_EN                            AS 		prodAliasName_en
+		,VALD_STRT_DT                                AS 		valdStrtDt
+		,VALD_END_DT                                 AS 		valdEndDt
+		,PROD_PRTY                                   AS 		prodPrty
+		,PROD_STATE_CD                               AS 		prodStateCd
+		,PROD_STATE_CD || ' ' || FC_LOOKUP_NAME(PROD_STATE_CD,'PrdStatus','en') AS   prodStateNm
+		,DSCR                                                                                      AS                            dscr
+		,IS_BUNDLE                                                                                 AS                            isBundle
+		,BILLING_CYCLE                                                                             AS                            billingCycle
+		,MPS_DOMAIN                                                                                AS                            mpsDomain
+		,DEFERRED_FLAG                                                                             AS                            deferredFlag
+		,CUG_FLAG                                                                                  AS                            cugFlag
+		,DISC_DSCR                                                                                 AS                            discDscr
+		,BONUS_DSCR                                                                                AS                            bounsDscr
+		,TARIFF_DSCR                                                                               AS                            tariffDscr
+		,CONTRACT_PERIOD                                                                           AS                            contractPeriod
+		,TREATMENT_PRICE                                                                           AS                            treatementPrice
+		,TREATMENT_DAY                                                                             AS                            treatmentDay
+		,PARENT_PRODUCT_CD                                                                         AS                            parentProductCd
+		,RSV_REG_DAY								                                               AS                            rsvRegDay
+		,AUTO_EXP_DAY								                                               AS                            autoExpDay
+		,PAID_CHG_DAY								                                               AS                            paidChgDay
+		,BUNDLE_DEPOSIT_YN							                                               AS                            bundleDepositYn
+		,ZONE_FLAG									                                               AS                            zoneFlag
+		,SMS_PERIOD								                                                   AS                            smsPeriod
+		,SHOT_PROD_NM								                                               AS                            shotProdNm
+		,EXT_PROD_CD								                                               AS                            extProdCd
+		,CURRENCY																				   AS							 currency	
+		,FC_LOOKUP_NAME(CURRENCY,'Currency','en')												   AS							 currencyMeanining
+		,PRODUCT_SUB_TYPE																		   AS							 productSubType	
+		,FC_LOOKUP_NAME(PRODUCT_SUB_TYPE,'PrdSubType','en')										   AS							 productSubTypeMeaning
+		,NEXT_JOIN_PRODUCT																		   AS                            nextJoinProduct
+		,EXPIRE_DATE														   					   AS							 expireDate
+		,(CASE WHEN EXPIRE_DATE_TYPE = '1' THEN 'Day'
+			   WHEN EXPIRE_DATE_TYPE = '2' THEN 'Month' 
+			   ELSE	''
+		  END)																					   AS 							 expireDateType
+		,NEXT_JOIN_CONFIRM																		   AS 							 nextJoinConfirm	
+		,(CASE  WHEN NEXT_JOIN_CONFIRM = '0' THEN 'No'
+				WHEN NEXT_JOIN_CONFIRM = '1' THEN 'Yes'
+				ELSE ''
+		  END) AS							 nextJoinConfirmYn
+		, resubscription_flag AS resubscriptionFlag
+	</sql>
+	
+	<select id="getProducts" parameterType="AsSearchFilter" resultType="AsPrmProduct">
+		SELECT
+			<include refid="productListColumn"/>
+		FROM ABA_PD_PRODUCT
+		WHERE 1=1
+		<include refid="CommonSearchFilterQueryGeneration"/>
+		
+	</select>
+	
+	<!-- update Product -->
+	<update id="updateProduct" parameterType="AsPrmProduct" >
+		UPDATE ABA_PD_PRODUCT SET 
+		  MRKT_CD         = #{mrktCd               , jdbcType=VARCHAR}  
+		, SVC_DOMAIN      = #{svcDomain            , jdbcType=VARCHAR}  
+		, PROD_DV_CD      = #{prodDvCd             , jdbcType=VARCHAR}  
+		, PROD_KD_CD      = #{prodKdCd             , jdbcType=VARCHAR}  
+		, PROD_KD_DTL_CD  = #{prodKdDtlCd          , jdbcType=VARCHAR}  
+		, CUST_DV_CD      = #{custDvCd             , jdbcType=VARCHAR}  
+		, VERSION         = #{version              , jdbcType=VARCHAR}  
+		, SALE_STRT_DTTM  = #{saleStrtDttm         , jdbcType=VARCHAR}     
+		, SALE_END_DTTM   = #{saleEndDttm          , jdbcType=VARCHAR}     
+		, PROD_ID_CD      = #{prodIdCd             , jdbcType=VARCHAR}  
+		, PROD_NAME       = #{prodName             , jdbcType=VARCHAR}  
+		, CURRENCY_CD     = #{currencyCd           , jdbcType=VARCHAR}  
+		, VALD_STRT_DT    = #{valdStrtDt           , jdbcType=VARCHAR}     
+		, VALD_END_DT     = #{valdEndDt            , jdbcType=VARCHAR}     
+		, PROD_PRTY       = #{prodPrty             }  
+		, PROD_STATE_CD   = #{prodStateCd          , jdbcType=VARCHAR}  
+		, DSCR            = #{dscr                 , jdbcType=VARCHAR}  
+		WHERE PROD_CD = #{prodCd}
+	</update>
+	
+	<sql id="productRateListColumn">
+		INVENTORY_ITEM_ID         AS inventoryItemId
+		,VALD_STRT_DT             AS valdStrtDt
+		,PROD_CD                  AS prodCd
+		,FTR_CD                   AS ftrCd
+		,RATE_DV_CD               AS rateDvCd
+		,IOCLL_DV_CD              AS iocllDvCd
+		,CALLING_ZONE_CD          AS callingZoneCd
+		,CALLED_ZONE_CD           AS calledZoneCd
+		,RATE_APLY_LVL_CD         AS rateAplyLvlCd
+		,RATE_APLY_DV_CD          AS rateAplyDvCd
+		,UAGE_APPLY_DV_CD         AS uageApplyDvCd
+		,RATE_APLY_TIMEBAND_CD    AS rateAplyTimebandCd
+		,RATE_APLY_INTERVAL_CD    AS rateAplyIntervalCd
+		,RATE_APLY_CYCL_DV_CD     AS rateAplyCyclDvCd
+		,RATE_APLY_KD_CD          AS rateAplyKdCd
+		,RATE_APLY_UNIT_CD        AS rateAplyUnitCd
+		,RATE_APLY_UNIT           AS rateAplyUnit
+		,RATE                     AS rate
+		,SPND_RATE                AS spndRate
+		,INIT_RATE_CYCLE_DURATION AS initRateCycleDuration
+		,INIT_RATE_APLY_UNIT_CD   AS initRateAplyUnitCd
+		,INIT_RATE_APLY_UNIT      AS initRateAplyUnit
+		,INIT_RATE                AS initRate
+		,VALD_END_DT              AS valdEndDt
+	</sql>
+
+	<!-- ProductRateGridList  -->
+	<select id="getProductRateGridList" parameterType="AsSearchFilter" resultType="AsPrmProductRate">
+		SELECT
+			A.INVENTORY_ITEM_ID          AS inventoryItemId ,
+	        A.VALD_STRT_DT               AS valdStrtDt ,
+	        A.PROD_CD                    AS prodCd ,
+	        A.FTR_CD                     AS ftrCd ,                  
+	        B.FTR_NAME                   AS ftrCdNm,                   
+	        A.RATE_DV_CD                 AS rateDvCd ,
+	        A.IOCLL_DV_CD                AS iocllDvCd ,
+	        A.CALLING_ZONE_CD            AS callingZoneCd ,
+	        A.CALLED_ZONE_CD             AS calledZoneCd ,
+	        A.RATE_APLY_LVL_CD           AS rateAplyLvlCd,
+	        A.RATE_APLY_DV_CD            AS rateAplyDvCd,
+	        A.UAGE_APPLY_DV_CD           AS uageApplyDvCd,
+	        A.RATE_APLY_TIMEBAND_CD      AS rateAplyTimebandCd ,
+	        A.RATE_APLY_INTERVAL_CD      AS rateAplyIntervalCd ,
+	        A.RATE_APLY_CYCL_DV_CD       AS rateAplyCyclDvCd ,
+	        A.RATE_APLY_KD_CD            AS rateAplyKdCd,
+	        A.RATE_APLY_UNIT_CD          AS rateAplyUnitCd,
+	        A.RATE_APLY_UNIT             AS rateAplyUnit,
+	        A.RATE                       AS rate ,
+	        A.SPND_RATE                  AS spndRate ,
+	        A.INIT_RATE_CYCLE_DURATION   AS initRateCycleDuration ,
+	        A.INIT_RATE_APLY_UNIT_CD     AS initRateAplyUnitCd ,
+	        A.INIT_RATE_APLY_UNIT        AS initRateAplyUnit ,
+	        A.INIT_RATE                  AS initRate ,
+	        A.VALD_END_DT                AS valdEndDt
+		FROM 
+			ABA_PD_RATE A,
+       		ABA_PD_FTR  B
+			WHERE
+			1=1
+			<if test="filterMap != null">AND PROD_CD = #{filterMap.prodCd}</if>
+			AND B.FTR_CD  = A.FTR_CD
+			<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	
+	<select id="getProductCycleRateGridList"   parameterType="AsSearchFilter" resultType="AsPrmProductRate">
+		select 
+		  ON_CYCLE AS onCycle,
+		  RATE AS rate,
+		  COND AS  cond
+		from ABA_PD_CUSTOM_RC
+		WHERE
+		1=1
+		<if test="filterMap != null">AND PROD_CD = #{filterMap.prodCd}</if>
+		<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	
+	<!-- Relation -->
+	<sql id="productDpndListColumn">
+		 PROD_CD                      AS  	prodCd
+        ,PROD_CD || ' :: ' || (SELECT PROD_NAME FROM ABA_PD_PRODUCT  A WHERE PROD_CD = A.PROD_CD AND ROWNUM = 1) AS prodName
+		,TRGT_PROD_CD                 AS 	trgtProdCd
+        ,TRGT_PROD_CD || ' :: ' || (SELECT PROD_NAME FROM ABA_PD_PRODUCT  A WHERE TRGT_PROD_CD = A.PROD_CD AND ROWNUM = 1) AS trgtProdName
+		,PROD_DPND_RELS_DV_CD         AS 	prodDpndSelsDvCd
+		
+        ,PROD_DPND_RELS_DV_CD || ' :: ' || FC_LOOKUP_NAME(PROD_DPND_RELS_DV_CD,'PrdRelsDvCd','en') AS   prodDpndSelsDvNm  
+		,RELS_KD_CD                   AS 	relsKdCd
+        ,VALD_STRT_DT                 AS 	valdStrtDt
+		,VALD_END_DT                  AS  	valdEndDt
+		,ADD_CHARGE					  AS    addChrge
+	</sql>
+	
+	<select id="getProductDpndGridList" parameterType="AsSearchFilter" resultType="AsPrmProductDpnd">
+		SELECT
+			A .PROD_CD 											AS prodCd,
+			(
+				SELECT
+					PROD_NAME
+				FROM
+					ABA_PD_PRODUCT
+				WHERE
+					PROD_CD = A .PROD_CD
+				AND ROWNUM = 1
+			) 													AS prodName,
+			A .TRGT_PROD_CD 									AS trgtProdCd,
+			(
+				SELECT
+					PROD_NAME
+				FROM
+					ABA_PD_PRODUCT
+				WHERE
+					PROD_CD = A .TRGT_PROD_CD
+				AND ROWNUM = 1) 								AS trgtProdName,
+			A .PROD_DPND_RELS_DV_CD 							AS prodDpndSelsDvCd,
+			FC_LOOKUP_NAME (B.PROD_KD_CD, 'CsPrdType', 'en') 		AS trgtProdType,
+			FC_LOOKUP_NAME (A .PROD_DPND_RELS_DV_CD,'PrdRelsDvCd','en') AS prodDpndSelsDvNm,
+			A .RELS_KD_CD 										AS relsKdCd,
+			TO_CHAR(A.VALD_STRT_DT, 'YYYY-MM-DD HH24:MI:SS')	AS valdStrtDt,
+			TO_CHAR(A.VALD_END_DT, 'YYYY-MM-DD HH24:MI:SS') 	AS valdEndDt,
+			A.ADD_CHARGE 										AS addChrge
+			
+		FROM
+			ABA_PD_PROD_DPND_RELS A,
+			ABA_PD_PRODUCT B
+	        WHERE
+	        1=1 AND 
+			B.PROD_CD = A.TRGT_PROD_CD
+			<if test="filterMap != null">AND B.PROD_CD = #{filterMap.prodCd}</if>
+			<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+	
+		
+	<!-- col ftr -->
+	<sql id="productFtrListColumn">
+		 PROD_CD           AS prodCd
+	      ,A.PROV_FTR_CD     AS provFtrCd  
+	      ,A.APLY_FLAG       AS aplyFlag
+	      ,NE_ID             AS neId
+	      ,IS_USER_DEFINE    AS isUserDffine
+	      ,IS_BSS_PROV       AS isBssProv
+	      ,MAX_PARAM_CNT     AS maxParamCnt
+	      ,DESCR             AS descr
+	      ,COMMON_USE_FLAG   AS commonUseFag
+	</sql>
+	
+	<!-- ftr Grid List  -->
+	<select id="getProductFtrGridList" parameterType="AsSearchFilter" resultType="AsPrmProductFtr">
+		SELECT
+			<include refid="productFtrListColumn"/>
+		FROM 	ABA_PD_PROV_FTR_BY_PROD A
+		      ,ABA_PD_PROV_FTR B
+		WHERE B.PROV_FTR_CD = A.PROV_FTR_CD
+ 		<if test="filterMap != null">AND PROD_CD = #{filterMap.prodCd}</if>
+		<include refid="CommonSearchFilterQueryGeneration"/>	
+	</select>
+	
+	<select id="getProductFtrParamList" parameterType="AsSearchFilter" resultType="AsPrmProductFtrParam"> 
+		SELECT 
+			 A.PROV_FTR_CD         AS provFtrCd
+		    ,A.PV_PARAM_ID         AS pvParamId  
+		    ,A.USER_DEF_VALUE      AS userDefValue
+		    ,A.PARAM_SEQ_NO        AS paramSeqNo
+		    ,A.MANDATORY_FLAG      AS manatoryFlag
+		    ,B.PARAM_TYPE          AS paramType
+		    ,B.NE_ID               AS neId
+		    ,B.DEF_VALUE           AS defValue
+		    ,B.DESCR               AS descr
+		 FROM 
+		 	ABA_PD_PROV_PARAM_SEQ A
+		   ,ABA_PD_PROV_PARAM_INFO B
+		 WHERE
+		   1=1 AND 
+		   A.PV_PARAM_ID = B.PV_PARAM_ID
+		   AND A.PROV_FTR_CD = #{filterMap.provFtrCd}
+		 ORDER BY PARAM_SEQ_NO ASC
+    </select>
+    
+    <select id="getDiscountTable" parameterType="AsSearchFilter" resultType="AsPrmProduct">
+	  	select 
+	  	a.prod_cd as prodCd
+		, a.ftr_cd as featureCd
+		, (select ftr_name from ABA_PD_FTR where ftr_cd = a.ftr_cd) as ftrName
+		, a.rate_aply_kd_cd as rateApplyKindCd
+		, FC_LOOKUP_NAME(a.rate_aply_kd_cd, 'RateAplyKdCd', 'en') as discountAplyName
+		, a.rate as discountRate
+		from 
+			ABA_PD_RATE a,
+		    ABA_PD_PRODUCT b
+		where 
+		1=1 AND
+		a.prod_cd = b.prod_cd
+		<if test="filterMap != null">AND b.PROD_CD = #{filterMap.prodCd}</if>
+		<include refid="CommonSearchFilterQueryGeneration"/>	
+		and a.rate_dv_cd = '10' 
+  	</select>
+  	
+  	<select id="getPenalty" parameterType="AsSearchFilter" resultType="AsPrmPenalty">
+	  	SELECT 
+			 A.PROD_CD 			AS prodCd
+		   , A.TRGT_PROD_CD		AS trgtProdCd
+		   , B.FTR_NAME 		AS featureNm
+		   , A.PNLT 			AS pnlt
+		FROM 
+			ABA_PD_PROD_PENALTY A,
+			ABA_PD_FTR B
+		WHERE
+		1=1
+		<if test="filterMap != null">AND A.PROD_CD = #{filterMap.prodCd}</if>
+		<include refid="CommonSearchFilterQueryGeneration"/> 
+		AND B.FTR_CD = A.FTR_CD
+  	</select>
+	
+</mapper>

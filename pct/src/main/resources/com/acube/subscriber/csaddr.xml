@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="com.acube.sub.repository.CsAddressRepository">
+	<sql id="csAddressColumn">
+		  cust_addr_seqno     addrSeq  
+		, add_num             addrNum
+		, cust_no             custNo        
+		, addr_dv_cd          addrDvCode       
+		, cust_vilg_abv_addr  vilageAboveAddr  
+		, cust_vilg_blw_addr  vilageBelowAddr
+		, full_addr			  fullAddress  
+		, cust_bas_addr_yn	  baseAddr       
+	</sql>
+	
+	<insert id="addCsAddress" parameterType="AsCsAddress">
+		<selectKey keyProperty="addrSeq" order="BEFORE" resultType="string">
+		SELECT SQ_ABA_CS_HB_CUST_ADDR.NEXTVAL addrSeq FROM DUAL
+		</selectKey>
+		INSERT INTO aba_cs_hb_cust_addr (
+			  cust_addr_seqno     
+			, add_num             
+			, cust_no             
+			, addr_dv_cd          
+			, cust_vilg_abv_addr  
+			, cust_vilg_blw_addr
+			, full_addr  
+			, cust_bas_addr_yn	  
+			, sys_creation_date
+			, created_by
+			, sys_update_date
+			, last_updated_by
+			, application_id
+			, dl_service_code
+			, dl_update_stamp    
+		) VALUES(
+			  #{addrSeq}
+			, #{addrNum        }
+			, #{customer.custNo  }
+			, #{addrDvCode       }
+			, #{vilageAboveAddr  }
+			, #{vilageBelowAddr  }
+			, #{vilageAboveAddr} || ' ' || #{vilageBelowAddr}
+			, #{baseAddr         }
+			, SYSDATE
+			, #{customer.operator.userId}
+			, SYSDATE
+			, #{customer.operator.userId}
+			, #{customer.applicationId}
+			, 'addCsAddress'
+			, 0
+		)     
+	</insert>
+	<update id="updateCsAddress" parameterType="AsCsAddress">
+		UPDATE aba_cs_hb_cust_addr
+		SET addr_dv_cd 			  = DECODE(#{addrDvCode      },'-999999',addr_dv_cd, #{addrDvCode      })
+			, add_num 			  = DECODE(#{addrNum      },'-999999',add_num, #{addrDvCode      })
+			, cust_vilg_abv_addr  = DECODE(#{vilageAboveAddr      },'-999999',cust_vilg_abv_addr, #{vilageAboveAddr      })
+			, cust_vilg_blw_addr  = DECODE(#{vilageBelowAddr      },'-999999',cust_vilg_blw_addr, #{vilageBelowAddr      })
+			, full_addr           = DECODE(#{vilageAboveAddr      },'-999999',cust_vilg_abv_addr, #{vilageAboveAddr      }) || ' ' || DECODE(#{vilageBelowAddr      },'-999999',cust_vilg_blw_addr, #{vilageBelowAddr      })
+			, cust_bas_addr_yn	= DECODE(#{baseAddr      },'-999999',cust_bas_addr_yn, #{baseAddr      })       
+			, sys_update_date   = SYSDATE                     
+			, last_updated_by   = #{customer.operator.userId}
+			, application_id    = #{customer.applicationId}   
+			, dl_service_code   = 'updateCsAddress'              
+		WHERE cust_addr_seqno = #{addrSeq}
+	</update>
+	<delete id="deleteCsAddress" parameterType="string">
+		DELETE FROM aba_cs_hb_cust_addr 
+		WHERE cust_addr_seqno = #{addrSeq}
+	</delete>
+	<delete id="deleteAllAddress" parameterType="string">
+		DELETE FROM aba_cs_hb_cust_addr 
+		WHERE cust_no = #{custNo}
+	</delete>	
+	<select id="getCustomerAddressList" parameterType="string" resultType="AsCsAddress">
+		SELECT
+			  cust_addr_seqno     addrSeq  
+			, add_num             addrNum
+			, cust_no             custNo        
+			, CASE WHEN addr_dv_cd = '1' THEN 'General'
+			       WHEN addr_dv_cd = '2' THEN 'Office' ELSE 'Bill' END AS addrDvCode       
+			, cust_vilg_abv_addr  vilageAboveAddr  
+			, cust_vilg_blw_addr  vilageBelowAddr
+			, full_addr			  fullAddress  
+			, cust_bas_addr_yn	  baseAddr     
+		FROM aba_cs_hb_cust_addr
+		WHERE cust_no = #{custNo} 
+	</select>
+	
+ 	<select id="getCustomerAddress" parameterType="string" resultType="AsCsAddress"> 
+ 	SELECT
+		<include refid="csAddressColumn"/>
+		FROM aba_cs_hb_cust_addr
+		WHERE cust_no = #{custNo} 
+	
+ 	</select> 
+</mapper>

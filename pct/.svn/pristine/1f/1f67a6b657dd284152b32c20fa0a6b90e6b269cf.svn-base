@@ -1,0 +1,33 @@
+package com.acube.pvs.service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.acube.common.domain.code.LookupCode;
+import com.acube.common.service.code.CodeCacheManager;
+import com.acube.pvs.domain.Entrance;
+import com.acube.pvs.mapper.CustomerRepository;
+
+
+@Service
+@Transactional
+public class CustomerServiceImpl implements CustomerService {
+	
+	@Autowired CustomerRepository customerRepository;
+	@Autowired CodeCacheManager codeCacheManager;
+	
+	private static Logger logger = LoggerFactory.getLogger(CustomerServiceImpl.class);	
+
+	//2013.03.20 grade ? •ë³? ì¡°íšŒ
+	@Override
+	public Entrance getCustomerGradeFromCust(Entrance entrance) {
+		return customerRepository.getCustomerGradeFromCust(entrance);
+	}
+	
+}

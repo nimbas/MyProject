@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.acube.security.mapper.OrgRepository">
+
+	<sql id="CommonSearchFilterQueryGeneration">
+		<if test="filterCount > 0">
+		 	AND (
+		 	<choose>
+		 	<when test="filterOper != null and filterOper.groupOp eq 'OR'">
+		 		<foreach collection="searchFilters" separator="OR" item="filter" index="index">
+					<choose><when test='filter.type eq "=" or filter.type eq "!=" or filter.type eq "IN" or filter.type eq "NOT IN"'>${filter.name}</when><otherwise>UPPER(${filter.name})</otherwise></choose> ${filter.type} <choose><when test='filter.type eq "=" or filter.type eq "!="'>#{filter.value}</when><otherwise>${filter.value}</otherwise></choose> 
+				</foreach>
+		 	</when>
+		 	<otherwise>
+		 		<foreach collection="searchFilters" separator="AND" item="filter" index="index">
+					<choose><when test='filter.type eq "=" or filter.type eq "!=" or filter.type eq "IN" or filter.type eq "NOT IN"'>${filter.name}</when><otherwise>UPPER(${filter.name})</otherwise></choose> ${filter.type} <choose><when test='filter.type eq "=" or filter.type eq "!="'>#{filter.value}</when><otherwise>${filter.value}</otherwise></choose> 
+				</foreach>
+		 	</otherwise>
+		 	</choose>
+		 	)
+		</if>
+	</sql>
+	
+	
+	<resultMap id="OrgLayerMap" type="AsOrgLayer">
+		<id column="DLR_CD" property="dlrCd" jdbcType="VARCHAR" />
+		<result column="DLR_NM" property="dlrNm" jdbcType="VARCHAR" />
+		<result column="HPOS_BIZBR_CD" property="hposBizbrCd" jdbcType="VARCHAR" />
+		<result column="HPOS_BIZBR_NM" property="hposBizbrNm" jdbcType="VARCHAR" />
+		<result column="DLR_STTS_DV_CD" property="dlrSttsDvCd" jdbcType="VARCHAR" />
+		<result column="LVL" property="level" jdbcType="VARCHAR" />
+		<result column="CHILDREN" property="children" />
+		<result column="LEAPMODE" property="leapMode" />
+	</resultMap>
+
+
+	<select id="getOrgnizationListByTree" resultMap="OrgLayerMap">
+		
+		WITH orgTree AS
+			(
+			SELECT
+				  level lvl
+				, a.dlr_cd
+				, a.dlr_nm
+				, a.hpos_bizbr_cd
+				, a.hpos_bizbr_nm
+				, SIGN((SELECT count(1) cnt  FROM aba_rv_dlr_mstr WHERE hpos_bizbr_cd = a.dlr_cd)+
+					(SELECT count(1) cnt FROM aba_or_user WHERE dlr_cd = a.dlr_cd)) children
+				, 'D' leapMode
+			FROM aba_rv_dlr_mstr a
+			WHERE level = 1
+			<choose>
+			<when test='dlrCd == null or dlrCd == "" or  dlrCd == "#"'>
+			START WITH a.hpos_bizbr_cd IS NULL
+			</when>
+			<otherwise>
+			START WITH a.hpos_bizbr_cd = #{dlrCd}
+			</otherwise>
+			</choose>
+			CONNECT BY prior a.dlr_cd = a.hpos_bizbr_cd
+			ORDER SIBLINGS by a.dlr_cd
+		)
+		SELECT lvl, dlr_cd, dlr_nm, hpos_bizbr_cd, hpos_bizbr_nm, children, leapMode FROM orgTree
+		<if test="includeUsers eq true">
+		UNION
+		SELECT
+			1 lvl,
+			x.user_id AS dlr_cd,
+			x.user_name AS dlr_nm ,
+			Y.dlr_cd AS hpos_bizbr_cd,
+			Y.dlr_nm AS hpos_bizbr_nm,
+			0 children,
+			'U' leapMode
+		FROM aba_or_user x, aba_rv_dlr_mstr y
+		WHERE x.dlr_cd = y.dlr_cd
+		AND x.dlr_cd = #{dlrCd}
+		<if test='groupSeq != null and groupSeq != ""'>	
+		AND x.user_id NOT IN (select user_id from ABA_SE_GROUP_USER_LINK WHERE group_seq = #{groupSeq} )
+		</if>
+		</if>
+	</select>
+	
+	<select id="getOrgnizationList" parameterType="string" resultMap="OrgLayerMap">
+		SELECT level,a.dlr_cd,a.dlr_nm,a.dlr_stts_dv_cd,a.HPOS_BIZBR_CD,a.hpos_bizbr_nm
+		FROM ABA_RV_DLR_MSTR a
+		<choose>
+		<when test="rootDlrCd == null or rootDlrCd ==''">
+		START WITH a.HPOS_BIZBR_CD IS NULL
+		</when>
+		<otherwise>
+		START WITH DLR_CD = #{rootDlrCd}
+		</otherwise>
+		</choose>
+		CONNECT BY PRIOR a.dlr_cd = a.hpos_bizbr_cd
+		ORDER SIBLINGS by a.dlr_cd
+	</select>
+
+	<resultMap id="GroupLayerMap" type="AsGroupLayer">
+		<id column="id" property="id" jdbcType="VARCHAR" />
+		<result column="lvl" property="level" jdbcType="VARCHAR" />
+		<result column="group_seq" property="groupSeq" jdbcType="VARCHAR" />
+		<result column="group_name" property="groupName" jdbcType="VARCHAR" />
+		<result column="user_seq" property="userSeq" jdbcType="VARCHAR" />
+		<result column="user_id" property="userId" jdbcType="VARCHAR" />
+		<result column="parent" property="parent" jdbcType="VARCHAR" />
+		<result column="tree_name" property="treeName" jdbcType="VARCHAR" />
+		<result column="description" property="description" jdbcType="VARCHAR" />
+		<result column="CHILDREN" property="children" />
+		<result column="LEAPMODE" property="leapMode" />
+	</resultMap>
+
+
+	<select id="getGroupUser" resultMap="GroupLayerMap">
+		SELECT
+			id,
+			lvl,
+			group_seq,
+			group_name,
+			user_seq,
+			user_id,
+			parent,
+			description,
+			CASE WHEN user_id IS NULL THEN group_name ELSE user_id END as tree_name,
+			children,
+			leapMode
+		FROM
+		(
+			<if test='groupSeq != null and groupSeq != "" and (groupSeq == "#" or groupSeq == "root")'>
+			WITH grouplist AS
+			(
+				SELECT level lvl, id, group_seq, group_name, user_seq, user_id, parent, description,children, leapMode
+				FROM(
+	                SELECT
+						'root' id,
+						'root' group_seq ,
+						'ROOT' group_name,
+						NULL AS user_seq,
+						NULL AS user_id,
+						NULL AS parent,
+						NULL description,
+						1 	AS children,
+						'D' AS leapMode
+					FROM DUAL
+					UNION ALL
+					SELECT
+						to_char(group_seq) id,
+						to_char(group_seq) group_seq ,
+						group_name,
+						NULL AS user_seq,
+						NULL AS user_id,
+						'root' AS parent,
+						description,
+						(SELECT COUNT(1) FROM aba_se_group_user_link WHERE group_seq = a.group_seq) 	AS children,
+						'D' AS leapMode
+					 FROM aba_se_group a
+					 <if test='groupSeq != null and groupSeq != "" and groupSeq != "#" and groupSeq != "root"'>
+					 WHERE to_char(group_seq) = #{groupSeq}
+					 </if>
+	            )
+				WHERE level = 1
+				<choose>
+				<when test='groupSeq == null or groupSeq == "" or groupSeq == "#"'>
+				START WITH parent IS NULL
+				</when>
+				<otherwise>
+				START WITH parent = 'root'
+				</otherwise>
+				</choose>
+				CONNECT BY prior group_seq = parent
+				ORDER SIBLINGS BY group_name
+			)
+			SELECT  lvl, id, group_seq, group_name, user_seq, user_id, parent, description, children, leapMode FROM grouplist
+			UNION
+			</if>
+			SELECT
+				1 lvl, 
+				(x.group_seq || '.' || x.user_id) AS id,
+				to_char(x.seq_no) group_seq,
+				y.group_name ,
+				x.seq_no AS user_seq,
+				x.user_id,
+				to_char(x.group_seq) AS parent,
+				NULL description,
+				0 	AS children,
+				'U' AS leapMode
+			FROM aba_se_group_user_link x, aba_se_group y
+			WHERE to_char(x.group_seq) = to_char(y.group_seq)
+			<choose>
+			<when test='groupSeq == null or groupSeq == "" or groupSeq == "#" or groupSeq == "root"'>
+			AND to_char(x.group_seq) = 'root'
+			</when>
+			<otherwise>
+			AND to_char(x.group_seq) = #{groupSeq}
+			</otherwise>
+			</choose>
+		)
+	</select>
+	
+	<select id="getGroupUser_backup" resultMap="GroupLayerMap">
+		SELECT
+			id,
+			level,
+			group_seq,
+			group_name,
+			user_seq,
+			user_id,
+			parent,
+			description,
+			CASE WHEN user_id IS NULL THEN group_name ELSE user_id END as tree_name,
+			children,
+			leapMode
+		FROM
+		(
+			WITH grouplist AS
+			(
+			
+				<if test='groupSeq == null or groupSeq == "" or groupSeq == "#"'>
+				SELECT
+					'root' id,
+					'root' group_seq ,
+					'ROOT' group_name,
+					NULL AS user_seq,
+					NULL AS user_id,
+					NULL AS parent,
+					NULL description,
+					1 	AS children,
+					'D' AS leapMode
+				FROM DUAL
+				UNION ALL
+				</if>
+				SELECT
+					to_char(group_seq) id,
+					to_char(group_seq) group_seq,
+					group_name,
+					NULL AS user_seq,
+					NULL AS user_id,
+					'root' AS parent,
+					description,
+					1 	AS children,
+					'D' AS leapMode
+				 FROM aba_se_group
+				<if test='groupSeq != null and groupSeq != "" and groupSeq != "#"'>
+				 WHERE group_seq = #{groupSeq}
+				 </if>
+			)
+			SELECT id, group_seq, group_name, user_seq, user_id, parent, description,children, leapMode FROM grouplist
+			UNION
+			SELECT
+				(x.group_seq || '.' || x.user_id) AS id,
+				to_char(x.seq_no),
+				y.group_name ,
+				x.seq_no AS user_seq,
+				x.user_id,
+				to_char(x.group_seq) AS parent,
+				NULL description,
+				0 	AS children,
+				'U' AS leapMode
+			FROM ABA_SE_GROUP_USER_LINK x, grouplist y
+			WHERE to_char(x.group_seq) = to_char(y.group_seq)
+		) z
+		<choose>
+		<when test='groupSeq != null and groupSeq != "" and groupSeq != "#"'>START WITH z.parent = 'root' </when>
+		<otherwise>START WITH z.parent IS NULL</otherwise>
+		</choose>
+		CONNECT BY PRIOR z.id = to_char(z.parent)
+		ORDER SIBLINGS BY z.id
+		
+	</select>
+	
+	<select id="getUsersByGroup" parameterType="AsSearchFilter" resultType="AsUser">
+		SELECT DISTINCT a.user_id 	userId
+			, a.user_name	userName
+			, b.dlr_cd		dlrCd
+			, b.dlr_nm		dlrName
+			, a.status	 	status
+			, a.user_level	userLevel
+		FROM aba_or_user a, ABA_RV_DLR_MSTR b
+		WHERE a.dlr_cd= b.dlr_cd
+		AND a.user_id IN (
+			select user_id from ABA_SE_GROUP_USER_LINK
+			WHERE group_seq = #{filterMap.groupSeq}
+		)
+		<include refid="CommonSearchFilterQueryGeneration"/>
+	</select>
+
+	<insert id="addAuthGroup" parameterType="AsGroup">
+		INSERT INTO aba_se_group (group_seq, group_name, description, 
+	      market_code, sys_create_date, sys_update_date, 
+	      operator_id, application_id, dl_service_code, 
+	      dl_update_stamp, group_level)
+	    VALUES (SQ_ABA_SE_GROUP.NEXTVAL, #{groupName,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, 
+	      #{marketCode,jdbcType=VARCHAR}, #{sysCreationDate,jdbcType=TIMESTAMP}, #{sysUpdateDate,jdbcType=TIMESTAMP}, 
+	      #{operatorId,jdbcType=VARCHAR}, #{applicationId,jdbcType=VARCHAR}, 'addAuthGroup', 
+	      0, #{groupLevel,jdbcType=VARCHAR}
+	   	)
+	</insert>
+	<update id="updateAuthGroup" parameterType="AsGroup">
+		UPDATE aba_se_group
+	    SET GROUP_NAME = #{groupName,jdbcType=VARCHAR},
+	      DESCRIPTION = #{description,jdbcType=VARCHAR},
+	      GROUP_LEVEL = #{groupLevel,jdbcType=VARCHAR},
+	      SYS_UPDATE_DATE = #{sysUpdateDate,jdbcType=TIMESTAMP},
+	      OPERATOR_ID = #{operatorId,jdbcType=VARCHAR},
+	      APPLICATION_ID = #{applicationId,jdbcType=VARCHAR},
+	      dl_service_code = 'updateAuthGroup'
+	    WHERE GROUP_SEQ = #{groupSeq,jdbcType=DECIMAL}
+	</update>
+	<delete id="deleteAuthGroup" parameterType="AsGroup">
+		DELETE FROM aba_se_group
+		WHERE GROUP_SEQ = #{groupSeq,jdbcType=DECIMAL}
+	</delete>
+	
+	<insert id="addGroupUserLink" parameterType="AsUser">
+		INSERT INTO ABA_SE_GROUP_USER_LINK (
+			  SEQ_NO					             
+			, GROUP_SEQ          
+			, USER_ID         
+			, ENABLED_FLAG
+			       
+			, SYS_CREATE_DATE    
+			, SYS_OPERATOR_ID    
+			, SYS_APPLICATION_ID 
+			, DL_UPDATE_STAMP    
+		)VALUES (
+			  SQ_ABA_SE_GROUP_USER_LINK.NEXTVAL
+			, #{group.groupSeq}
+			, #{userId}
+			, #{group.enabledFlag}
+			
+			, SYSDATE
+			, #{operatorId}
+			, #{applicationId, jdbcType=VARCHAR}
+		    , 0
+		)
+	</insert>
+	<insert id="deleteGroupUserLinkByGroup" parameterType="AsGroup">
+		DELETE FROM ABA_SE_GROUP_USER_LINK WHERE GROUP_SEQ = #{groupSeq}
+	</insert>
+	
+	<insert id="deleteGroupUserLinkByUser" parameterType="AsUser">
+		DELETE FROM ABA_SE_GROUP_USER_LINK WHERE GROUP_SEQ = #{group.groupSeq} AND user_id = #{userId}
+	</insert>
+	
+	<select id="getUsersOfSelectedDealer" resultType="AsUser">
+		SELECT 
+			  DISTINCT 
+			  user_id userId
+			, user_name userName
+		FROM (
+			<if test="dealers != null">
+			SELECT user_id, user_name from aba_or_user
+			WHERE dlr_cd IN (
+				<choose>
+				<when test='appendWithSubDealer eq "true"'>
+				SELECT a.dlr_cd
+				FROM aba_rv_dlr_mstr a
+				START WITH a.dlr_cd IN  <foreach collection="dealers" item="dlrCd" open="(" close=")" separator=",">#{dlrCd}</foreach>
+				CONNECT BY PRIOR a.dlr_cd = a.hpos_bizbr_cd
+				</when>
+				<otherwise>
+				<foreach collection="dealers" item="dlrCd" open="" close="" separator=",">#{dlrCd}</foreach>
+				</otherwise>
+				</choose>
+			)
+			</if>
+			<if test="dealers != null and users != null">
+			UNION 
+			</if>
+			<if test="users != null">
+			SELECT user_id, user_name from aba_or_user
+			WHERE user_id IN <foreach collection="users" item="userId" open="(" close=")" separator=",">#{userId}</foreach>
+			</if>
+		)
+		WHERE user_id NOT IN(SELECT user_id FROM aba_se_group_user_link where group_seq = #{group.groupSeq}
+		)
+				
+	</select> 
+	
+	<select id="getGroupList" resultType="AsGroup">
+		SELECT
+			  group_seq			groupSeq
+			, group_name		groupName
+			, description
+			, market_code		marketCode
+			, group_level		groupLevel
+		FROM aba_se_group
+	</select>
+</mapper>

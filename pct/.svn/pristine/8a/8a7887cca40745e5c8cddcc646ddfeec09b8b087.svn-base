@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="com.acube.pvs.mapper.MapRepository">
+	<sql id="CommonSearchFilterQueryGeneration">
+		<if test="filterCount > 0">
+		 	AND (
+		 	<choose>
+		 	<when test="filterOper != null and filterOper.groupOp eq 'OR'">
+		 		<foreach collection="searchFilters" separator="OR" item="filter" index="index">
+					<choose><when test='filter.type eq "=" or filter.type eq "!=" or filter.type eq "IN" or filter.type eq "NOT IN"'>${filter.name}</when><otherwise>UPPER(${filter.name})</otherwise></choose> ${filter.type} <choose><when test='filter.type eq "=" or filter.type eq "!="'>#{filter.value}</when><otherwise>${filter.value}</otherwise></choose> 
+				</foreach>
+		 	</when>
+		 	<otherwise>
+		 		<foreach collection="searchFilters" separator="AND" item="filter" index="index">
+					<choose><when test='filter.type eq "=" or filter.type eq "!=" or filter.type eq "IN" or filter.type eq "NOT IN"'>${filter.name}</when><otherwise>UPPER(${filter.name})</otherwise></choose> ${filter.type} <choose><when test='filter.type eq "=" or filter.type eq "!="'>#{filter.value}</when><otherwise>${filter.value}</otherwise></choose> 
+				</foreach>
+		 	</otherwise>
+		 	</choose>
+		 	)
+		</if>
+	</sql>
+	
+	<resultMap id="MapDefBaseResultMap" type="AsPsProvMap" >
+	    <id column="SRC_NE_ID" property="srcNeId" jdbcType="VARCHAR" />
+	    <id column="SRC_CMD" property="srcCmd" jdbcType="VARCHAR" />
+	    <id column="SRC_FTR_CD" property="srcFtrCd" jdbcType="VARCHAR" />
+	    <result column="SYS_CREATION_DATE" property="sysCreationDate" jdbcType="TIMESTAMP" />
+	    <result column="SYS_UPDATE_DATE" property="sysUpdateDate" jdbcType="TIMESTAMP" />
+	    <result column="OPERATOR_ID" property="operatorId" jdbcType="VARCHAR" />
+	    <result column="APPLICATION_ID" property="applicationId" jdbcType="VARCHAR" />
+	    <result column="DL_SERVICE_CODE" property="dlServiceCode" jdbcType="VARCHAR" />
+	    <result column="DL_UPDATE_STAMP" property="dlUpdateStamp" jdbcType="DECIMAL" />
+	</resultMap>
+	
+  	<select id="getProvMapDefs" parameterType="AsSearchFilter" resultMap="MapDefBaseResultMap">
+  		SELECT 
+  			SRC_NE_ID, SRC_CMD, SRC_FTR_CD, 
+	    	SYS_CREATION_DATE, SYS_UPDATE_DATE, OPERATOR_ID, APPLICATION_ID, DL_SERVICE_CODE, DL_UPDATE_STAMP
+		FROM aba_ps_prov_map_list
+		WHERE 1=1 <include refid="CommonSearchFilterQueryGeneration"/>
+  	</select>
+  	
+  	<insert id="addProvMapDef" parameterType="AsPsProvMap">
+  		INSERT INTO aba_ps_prov_map_list (src_ne_id, src_cmd, src_ftr_cd, 
+	      sys_creation_date, sys_update_date, operator_id, application_id, 
+	      dl_service_code, dl_update_stamp)
+	    VALUES (#{srcNeId,jdbcType=VARCHAR}, #{srcCmd,jdbcType=VARCHAR}, #{srcFtrCd,jdbcType=VARCHAR}, 
+	      #{sysCreationDate,jdbcType=TIMESTAMP}, #{sysUpdateDate,jdbcType=TIMESTAMP}, #{operatorId,jdbcType=VARCHAR}, 
+	      #{applicationId,jdbcType=VARCHAR}, 'addProvMapDef', '0')
+  	</insert>
+  	
+  	<delete id="deleteProvMapDef" parameterType="AsPsProvMap">
+  		DELETE FROM aba_ps_prov_map_list
+  		WHERE src_ne_id = #{srcNeId}
+  		AND src_cmd = #{srcCmd}
+  		AND src_ftr_cd = #{srcFtrCd}
+  	</delete>
+  	
+  	<resultMap id="MapBaseResultMap" type="AsPsProvMap" >
+	    <id column="SRC_NE_ID" property="srcNeId" jdbcType="VARCHAR" />
+	    <id column="SRC_CMD" property="srcCmd" jdbcType="VARCHAR" />
+	    <id column="SRC_FTR_CD" property="srcFtrCd" jdbcType="VARCHAR" />
+	    <id column="PROV_ORDER" property="provOrder" jdbcType="DECIMAL" />
+	    <id column="TRGT_NE_ID" property="trgtNeId" jdbcType="VARCHAR" />
+	    <id column="TRGT_CMD" property="trgtCmd" jdbcType="VARCHAR" />
+	    <id column="TRGT_FTR_CD" property="trgtFtrCd" jdbcType="VARCHAR" />
+	    <result column="ERROR_CONTINUE_FLAG" property="errorContinueFlag" jdbcType="VARCHAR" />
+	    <result column="ROLLBACK_OR_BRANCH" property="rollbackOrBranch" jdbcType="VARCHAR" />
+	    <result column="ROLEBACK_NE_CMD" property="rolebackNeCmd" jdbcType="VARCHAR" />
+	    <result column="EXCEPTION_FLOW_ID" property="exceptionFlowId" jdbcType="VARCHAR" />
+	    <result column="SYS_CREATION_DATE" property="sysCreationDate" jdbcType="TIMESTAMP" />
+	    <result column="SYS_UPDATE_DATE" property="sysUpdateDate" jdbcType="TIMESTAMP" />
+	    <result column="OPERATOR_ID" property="operatorId" jdbcType="VARCHAR" />
+	    <result column="APPLICATION_ID" property="applicationId" jdbcType="VARCHAR" />
+	    <result column="DL_SERVICE_CODE" property="dlServiceCode" jdbcType="VARCHAR" />
+	    <result column="DL_UPDATE_STAMP" property="dlUpdateStamp" jdbcType="DECIMAL" />
+	</resultMap>
+	<sql id="Trgt_Map_Base_Column_List" >
+	    SRC_NE_ID, SRC_CMD, SRC_FTR_CD, PROV_ORDER, TRGT_NE_ID, TRGT_CMD, TRGT_FTR_CD, ERROR_CONTINUE_FLAG, 
+	    ROLLBACK_OR_BRANCH, ROLEBACK_NE_CMD, EXCEPTION_FLOW_ID, SYS_CREATION_DATE, SYS_UPDATE_DATE, 
+	    OPERATOR_ID, APPLICATION_ID, DL_SERVICE_CODE, DL_UPDATE_STAMP
+  	</sql>
+  	<select id="getProvTrgtMaps" parameterType="AsSearchFilter" resultMap="MapBaseResultMap">
+  		SELECT 
+   			<include refid="Trgt_Map_Base_Column_List" />
+    	FROM aba_ps_prov_map
+    	WHERE 1=1 <include refid="CommonSearchFilterQueryGeneration"/>
+  	</select>
+  	<insert id="addProvTrgtMap" parameterType="AsPsProvMap">
+  		INSERT INTO ABA_PS_PROV_MAP (SRC_NE_ID, SRC_CMD, SRC_FTR_CD, 
+	      PROV_ORDER, TRGT_NE_ID, TRGT_CMD, 
+	      TRGT_FTR_CD, ERROR_CONTINUE_FLAG, ROLLBACK_OR_BRANCH, 
+	      ROLEBACK_NE_CMD, EXCEPTION_FLOW_ID, SYS_CREATION_DATE, 
+	      SYS_UPDATE_DATE, OPERATOR_ID, APPLICATION_ID, 
+	      DL_SERVICE_CODE, DL_UPDATE_STAMP)
+	    VALUES (#{srcNeId,jdbcType=VARCHAR}, #{srcCmd,jdbcType=VARCHAR}, #{srcFtrCd,jdbcType=VARCHAR}, 
+	      #{provOrder,jdbcType=DECIMAL}, #{trgtNeId,jdbcType=VARCHAR}, #{trgtCmd,jdbcType=VARCHAR}, 
+	      #{trgtFtrCd,jdbcType=VARCHAR}, #{errorContinueFlag,jdbcType=VARCHAR}, #{rollbackOrBranch,jdbcType=VARCHAR}, 
+	      #{rolebackNeCmd,jdbcType=VARCHAR}, #{exceptionFlowId,jdbcType=VARCHAR}, #{sysCreationDate,jdbcType=TIMESTAMP}, 
+	      #{sysUpdateDate,jdbcType=TIMESTAMP}, #{operatorId,jdbcType=VARCHAR}, #{applicationId,jdbcType=VARCHAR}, 
+	      'addProvTrgtMap', '0')
+  	</insert>
+  	
+  	<update id="updateProvTrgtMap" parameterType="AsPsProvMap">
+  		UPDATE aba_ps_prov_map SET 
+	      error_continue_flag = #{errorContinueFlag,jdbcType=VARCHAR},
+	      rollback_or_branch  = #{rollbackOrBranch,jdbcType=VARCHAR},
+	      roleback_ne_cmd 	= #{rolebackNeCmd,jdbcType=VARCHAR},
+	      exception_flow_id = #{exceptionFlowId,jdbcType=VARCHAR},
+	      sys_update_date	= #{sysUpdateDate,jdbcType=TIMESTAMP},
+	      operator_id 		= #{operatorId,jdbcType=VARCHAR},
+	      application_id 	= #{applicationId,jdbcType=VARCHAR},
+	      dl_service_code 	= 'updateProvTrgtMap'
+	    WHERE src_ne_id 	= #{srcNeId,jdbcType=VARCHAR}
+	      AND src_cmd 		= #{srcCmd,jdbcType=VARCHAR}
+	      AND src_ftr_cd 	= #{srcFtrCd,jdbcType=VARCHAR}
+	      AND prov_order 	= #{provOrder,jdbcType=DECIMAL}
+	      AND trgt_ne_id 	= #{trgtNeId,jdbcType=VARCHAR}
+	      AND trgt_cmd 		= #{trgtCmd,jdbcType=VARCHAR}
+	      AND trgt_ftr_cd 	= #{trgtFtrCd,jdbcType=VARCHAR}
+  	</update>
+  	
+  	<delete id="deleteProvTrgtMap" parameterType="AsPsProvMap">
+  		DELETE FROM aba_ps_prov_map
+  		WHERE SRC_NE_ID 	= #{srcNeId,jdbcType=VARCHAR}
+	      AND SRC_CMD 		= #{srcCmd,jdbcType=VARCHAR}
+	      AND SRC_FTR_CD 	= #{srcFtrCd,jdbcType=VARCHAR}
+	      AND PROV_ORDER 	= #{provOrder,jdbcType=DECIMAL}
+	      AND TRGT_NE_ID 	= #{trgtNeId,jdbcType=VARCHAR}
+	      AND TRGT_CMD 		= #{trgtCmd,jdbcType=VARCHAR}
+	      AND TRGT_FTR_CD 	= #{trgtFtrCd,jdbcType=VARCHAR} 
+  	</delete>
+  	<delete id="deleteProvTrgtMapBySource" parameterType="AsPsProvMap">
+  		DELETE FROM aba_ps_prov_map
+  		WHERE SRC_NE_ID 	= #{srcNeId,jdbcType=VARCHAR}
+	      AND SRC_CMD 		= #{srcCmd,jdbcType=VARCHAR}
+	      AND SRC_FTR_CD 	= #{srcFtrCd,jdbcType=VARCHAR}
+  	</delete>
+  	
+  	 <resultMap id="ParamMapBaseResultMap" type="AsPsParamMap" >
+	    <id column="NE" property="ne" jdbcType="VARCHAR" />
+	    <id column="CMD" property="cmd" jdbcType="VARCHAR" />
+	    <id column="FTR_CD" property="ftrCd" jdbcType="VARCHAR" />
+	    <id column="FROM_NE" property="fromNe" jdbcType="VARCHAR" />
+	    <id column="FROM_CMD" property="fromCmd" jdbcType="VARCHAR" />
+	    <id column="FROM_FTR_CD" property="fromFtrCd" jdbcType="VARCHAR" />
+	    <id column="FROM_CMD_IO_IND" property="fromCmdIoInd" jdbcType="VARCHAR" />
+	    <id column="FROM_PARAM_ID" property="fromParamId" jdbcType="VARCHAR" />
+	    <id column="TO_NE" property="toNe" jdbcType="VARCHAR" />
+	    <id column="TO_CMD" property="toCmd" jdbcType="VARCHAR" />
+	    <id column="TO_FTR_CD" property="toFtrCd" jdbcType="VARCHAR" />
+	    <id column="TO_CMD_IO_IND" property="toCmdIoInd" jdbcType="VARCHAR" />
+	    <id column="TO_PARAM_ID" property="toParamId" jdbcType="VARCHAR" />
+		<id column="DEF_VALUE" property="defValue" jdbcType="VARCHAR" />
+		<association property="paramSeq" javaType="AsPsProvParamSeq">
+			<id column="PARAM_ID" property="paramId" jdbcType="VARCHAR" />
+		    <result column="MULTI_LEVEL_IND" property="multiLevelInd" jdbcType="VARCHAR" />
+		    <result column="REQ_RSP_IND" property="reqRspInd" jdbcType="VARCHAR" />
+		    <result column="PARAM_LEVEL" property="paramLevel" jdbcType="DECIMAL" />
+		    <result column="PARENT_PARAM_ID" property="parentParamId" jdbcType="VARCHAR" />
+		    <result column="PARAM_SEQ_NO" property="paramSeqNo" jdbcType="DECIMAL" />
+		    <result column="USER_DEF_VALUE" property="userDefValue" jdbcType="VARCHAR" />
+		    <result column="MANDATORY_FLAG" property="mandatoryFlag" jdbcType="VARCHAR" />
+		    <result column="DEF_LABEL" property="defLabel" jdbcType="VARCHAR" />
+		    <result column="DEF_VALUE" property="defValue" jdbcType="VARCHAR" />
+		    <result column="WORK_TYPE" property="workType" jdbcType="VARCHAR" />
+		</association>
+	</resultMap>
+	<sql id="Param_Map_Base_Column_List" >
+	    NE, CMD, FTR_CD, FROM_NE, FROM_CMD, FROM_FTR_CD, FROM_CMD_IO_IND, FROM_PARAM_ID, TO_NE, TO_CMD, 
+	    TO_FTR_CD, TO_CMD_IO_IND, TO_PARAM_ID, DEF_VALUE
+  	</sql>
+  	<select id="getProvParameterMaps" parameterType="AsSearchFilter" resultMap="ParamMapBaseResultMap">
+  		SELECT
+			  S.NE_ID NE
+			, S.CMD
+			, S.FTR_CD
+			, S.NE_ID 		TO_NE
+			, S.CMD  		TO_CMD
+			, S.FTR_CD 		TO_FTR_CD
+			, S.PARAM_ID 	TO_PARAM_ID
+			, S.REQ_RSP_IND 
+			, NVL(M.TO_CMD_IO_IND, S.REQ_RSP_IND) TO_CMD_IO_IND
+			, M.FROM_NE
+			, M.FROM_CMD
+			, M.FROM_FTR_CD
+			, M.FROM_CMD_IO_IND
+			, M.FROM_PARAM_ID
+			, NVL(M.def_value, S.def_value) DEF_VALUE
+			, S.MULTI_LEVEL_IND
+		    , S.PARAM_LEVEL
+		    , S.PARENT_PARAM_ID
+		    , S.PARAM_SEQ_NO
+		    , S.USER_DEF_VALUE
+		    , S.MANDATORY_FLAG
+		    , S.DEF_LABEL
+		    , DECODE(M.FROM_PARAM_ID, NULL, 'CREATE', 'NONE') WORK_TYPE
+		FROM (	SELECT * 
+				FROM aba_ps_prov_param_seq 
+				WHERE 1=1
+			    AND ne_id = #{filterMap.trgtNeId}
+			    AND cmd = #{filterMap.trgtCmd}
+			    AND ftr_cd =  #{filterMap.trgtFtrCd}
+		        <include refid="CommonSearchFilterQueryGeneration"/>
+			 ) S, 
+			 (
+			 	SELECT *
+				FROM aba_ps_param_map
+				WHERE 1=1
+			    AND ne = #{filterMap.neId}
+			    AND cmd = #{filterMap.cmd}
+			    AND ftr_cd =  #{filterMap.ftrCd}
+			 ) M
+		WHERE S.CMD = M.TO_CMD(+)
+		AND S.NE_ID = M.TO_NE(+)
+		AND S.FTR_CD = M.TO_FTR_CD(+)
+		AND S.REQ_RSP_IND = M.TO_CMD_IO_IND(+)
+		AND    S.PARAM_ID = M.TO_PARAM_ID(+)
+		/*ORDER BY to_ne ,CMD,FTR_CD,REQ_RSP_IND,PARAM_SEQ_NO*//*jqgrid sort와 충돌이 나서, 주석처리*/
+  	</select>
+  	
+  	  	
+  	<select id="getProvParameterMapsBySource" parameterType="AsSearchFilter" resultMap="ParamMapBaseResultMap">
+  		SELECT 
+		    NE_ID,
+		    CMD,
+		    FTR_CD,
+		    NE_ID 		TO_NE,
+		    CMD 		TO_CMD,
+		    FTR_CD 		TO_FTR_CD,
+		    PARAM_ID 	TO_PARAM_ID,
+		    REQ_RSP_IND,
+		    DEF_VALUE,
+		    MULTI_LEVEL_IND,
+		    PARAM_LEVEL,
+		    PARENT_PARAM_ID,
+		    PARAM_SEQ_NO,
+		    USER_DEF_VALUE,
+		    MANDATORY_FLAG,
+		    DEF_LABEL
+		FROM ABA_PS_PROV_PARAM_SEQ
+		WHERE (NE_ID, CMD, FTR_CD) IN (
+	        <!-- source parameter -->
+			SELECT 
+	             #{filterMap.neId},
+	             #{filterMap.cmd},
+	             #{filterMap.ftrCd}
+	         FROM dual
+	         UNION ALL 
+			<!-- target parameter -->
+	        SELECT 
+	             TRGT_NE_ID,
+	             TRGT_CMD,
+	             TRGT_FTR_CD
+	        FROM aba_ps_prov_map
+	        WHERE 1=1
+		    AND src_ne_id = #{filterMap.neId}
+		    AND src_cmd = #{filterMap.cmd}
+		    AND src_ftr_cd =  #{filterMap.ftrCd}
+		    AND trgt_ne_id = #{filterMap.trgtNeId}
+		    AND trgt_cmd = #{filterMap.trgtCmd}
+		    AND trgt_ftr_cd = #{filterMap.trgtFtrCd}
+		    AND prov_order &lt; #{filterMap.provOrder}
+		)
+		<include refid="CommonSearchFilterQueryGeneration"/>
+  	</select>
+  	<insert id="addParamMap" parameterType="AsPsParamMap">
+  		INSERT INTO aba_ps_param_map (
+  		  ne, cmd, ftr_cd, 
+  		  from_ne, from_cmd, from_ftr_cd, from_cmd_io_ind, from_param_id, 
+  		  to_ne, to_cmd, to_ftr_cd, to_cmd_io_ind, to_param_id, 
+	      def_value)
+	    VALUES (#{ne,jdbcType=VARCHAR}, #{cmd,jdbcType=VARCHAR}, #{ftrCd,jdbcType=VARCHAR}, 
+	      #{fromNe,jdbcType=VARCHAR}, #{fromCmd,jdbcType=VARCHAR}, #{fromFtrCd,jdbcType=VARCHAR}, #{fromCmdIoInd,jdbcType=VARCHAR}, #{fromParamId,jdbcType=VARCHAR}, 
+	      #{toNe,jdbcType=VARCHAR}, #{toCmd,jdbcType=VARCHAR}, #{toFtrCd,jdbcType=VARCHAR}, #{toCmdIoInd,jdbcType=VARCHAR}, #{toParamId,jdbcType=VARCHAR}, 
+	      #{defValue,jdbcType=VARCHAR})
+  	</insert>
+  	
+  	<update id="updateParamMap" parameterType="AsPsParamMap">
+  		UPDATE aba_ps_param_map 
+  		SET
+  		  from_ne 		  = #{fromNe,jdbcType=VARCHAR},
+	      from_cmd 		  = #{fromCmd,jdbcType=VARCHAR},
+	      from_ftr_cd 	  = #{fromFtrCd,jdbcType=VARCHAR},
+	      from_param_id   = #{fromParamId,jdbcType=VARCHAR},
+	      from_cmd_io_ind = #{fromCmdIoInd,jdbcType=VARCHAR},
+      	  def_value 	  = #{defValue,jdbcType=VARCHAR}
+    	WHERE ne 		= #{ne,jdbcType=VARCHAR}
+	    AND cmd 		= #{cmd,jdbcType=VARCHAR}
+	    AND ftr_cd 	 	= #{ftrCd,jdbcType=VARCHAR}
+	    AND to_ne 		= #{toNe,jdbcType=VARCHAR}
+	    AND to_cmd 		= #{toCmd,jdbcType=VARCHAR}
+	    AND to_ftr_cd 	= #{toFtrCd,jdbcType=VARCHAR}
+	    AND to_param_id = #{toParamId,jdbcType=VARCHAR}
+  	</update>
+  	
+  	<delete id="deleteParamMap" parameterType="AsPsParamMap">
+  		DELETE FROM aba_ps_param_map
+  		WHERE ne 		= #{ne,jdbcType=VARCHAR}
+	    AND cmd 		= #{cmd,jdbcType=VARCHAR}
+	    AND ftr_cd 	 	= #{ftrCd,jdbcType=VARCHAR}
+	    AND to_ne 		= #{toNe,jdbcType=VARCHAR}
+	    AND to_cmd 		= #{toCmd,jdbcType=VARCHAR}
+	    AND to_ftr_cd 	= #{toFtrCd,jdbcType=VARCHAR}
+	    AND to_param_id = #{toParamId,jdbcType=VARCHAR}
+  	</delete>
+  	
+  	<delete id="deleteParamMapByTrgt" parameterType="AsPsParamMap">
+  		DELETE FROM aba_ps_param_map
+  		WHERE ne 		= #{ne,jdbcType=VARCHAR}
+	    AND cmd 		= #{cmd,jdbcType=VARCHAR}
+	    AND ftr_cd 	 	= #{ftrCd,jdbcType=VARCHAR}
+	    AND to_ne 		= #{toNe,jdbcType=VARCHAR}
+	    AND to_cmd 		= #{toCmd,jdbcType=VARCHAR}
+	    AND to_ftr_cd 	= #{toFtrCd,jdbcType=VARCHAR}
+  	</delete>
+  	
+  	<delete id="deleteParamMapBySource" parameterType="AsPsParamMap">
+  		DELETE FROM aba_ps_param_map
+  		WHERE ne 		= #{ne,jdbcType=VARCHAR}
+	    AND cmd 		= #{cmd,jdbcType=VARCHAR}
+	    AND ftr_cd 	 	= #{ftrCd,jdbcType=VARCHAR}
+  	</delete>
+  	
+  	<select id="getExceptionFlow" parameterType="AsSearchFilter" resultMap="MapBaseResultMap">
+  		SELECT 
+   			EXCEPTION_FLOW_ID
+    	FROM aba_ps_prov_exception_flows
+    	WHERE 1=1 <include refid="CommonSearchFilterQueryGeneration"/>
+  	</select>
+</mapper>

@@ -1,0 +1,17 @@
+package com.acube.sub.service;
+
+import java.util.List;
+
+import com.acube.common.domain.searchFilter.SearchFilter;
+import com.acube.common.pagination.Pagination;
+import com.acube.sub.domain.EntrContractBill;
+import com.acube.sub.domain.SearchCustEntrVO;
+
+public interface SubscriberService {
+	// count
+	// public int getCustAndEntrListCount(SearchFilter  searchFilter);
+	
+	// customer Info
+	public EntrContractBill getCustInfo(String searchEntrNo);
+
+}

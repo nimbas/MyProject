@@ -1,0 +1,904 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="com.acube.sub.mapper.SubscriberServiceRepository">
+	<sql id="retrieveSearchEntrInfoColumn">
+		   A.ENTR_NO                                        		         AS entrNo
+	      ,A.PROD_NO                                        		         AS prodNo
+	      ,A.IMSI_NO														 AS imsiNo
+	      ,A.ACENO                                          		         AS aceno
+	      ,A.BILL_ACNT_NO                                                    AS billAcntNo
+	      ,A.SVC_CD                                                          AS svcCd
+	      ,FC_LOOKUP_NAME (A.SVC_CD, 'SvcDomain',#{filterMap.language})      AS svcNm
+	      ,A.CUST_NO                                                         AS custNo
+	     <!--  ,D.CUST_NM || ' ' || CUST_NM1 || ' ' || CUST_NM2                   AS custNm -->
+	      ,D.CUST_NM                                                         AS custNm
+	      ,D.CUST_NM1                                                        AS custNm1
+	      ,D.CUST_NM2                                                        AS custNm2
+	      ,D.CUSTRNM_NO                                                      AS custrnmNo
+	      ,D.BS_REG_NO                                                       AS bsRegNo
+	      ,D.BIZ_COMP_NM                                                     AS bizRegNm
+	      ,TO_CHAR(A.FRST_ENTR_DTTM, 'YYYYMMDDHH24MISS')                     AS frstEntrDttm
+	      ,A.ENTR_STTS_CD                                                    AS entrSttsCd
+	      ,FC_LOOKUP_NAME (A.ENTR_STTS_CD, 'SttsCd',#{filterMap.language})   AS entrSttsNm
+	      ,CN.LTPYM_STTS_CD                                                  AS ocsSttsCd
+	      ,FC_LOOKUP_NAME (CN.LTPYM_STTS_CD, 'OcsSubStatus',#{filterMap.language}) AS ocsSttsNm
+	      ,TO_CHAR(A.ENTR_CHNG_DTTM, 'YYYYMMDDHH24MISS')                     AS entrChngDttm
+	      ,ENTR_STTS_CHNG_RSN_CD                            				 AS entrSttsChngRsnCd
+	      ,FC_LOOKUP_NAME (A.ENTR_STTS_CHNG_RSN_CD, 'EventCd',#{filterMap.language})      		AS entrSttsChngRsnNm
+	      ,ENTR_STTS_CHNG_RSN_DTL_CD                        			     AS entrSttsChngRsnDtlCd
+	      ,FC_LOOKUP_NAME (A.ENTR_STTS_CHNG_RSN_DTL_CD, 'EventDtlCd',#{filterMap.language})     AS entrSttsChngRsnDtlNm
+	      ,A.ESTB_ADDR_NO
+	      ,B.FULL_ADDR                                     					 AS fullAddr
+	      ,A.PPAY_ENTR_DV_CD                               					 AS ppayEntrDvCd
+	      ,FC_LOOKUP_NAME (A.PPAY_ENTR_DV_CD, 'NumberType',#{filterMap.language})   			AS ppayEntrDvNm
+	      ,DECODE(C.cnvg_stts_cd, 'C', '', C.CNVG_NO)            			 AS cnvgNo
+	      ,DECODE(C.cnvg_stts_cd, 'C', '', C.CNVG_KD_CD)                     AS cnvgKdCd
+	      ,CASE WHEN C.cnvg_stts_cd != 'C' AND C.CNVG_KD_CD IS NOT NULL THEN
+	       	 (SELECT prod_name FROM ABA_PD_PRODUCT WHERE prod_cd = C.CNVG_KD_CD)
+	       ELSE
+	       ''
+	       END AS cnvgKdNm
+	       ,( select /*+ INDEX_DESC(P XPK_ABA_SB_SVC_BY_ENTR) */  PD.PROD_NAME
+				from ABA_SB_SVC_BY_ENTR P, ABA_PD_PRODUCT PD
+				where 1=1
+				AND P.SVC_KD_CD IN ('01', '04')
+				AND P.PROD_CD = PD.PROD_CD
+				AND P.ENTR_NO = A.ENTR_NO
+				and rownum = 1
+		  )	AS prodNm
+	      ,A.RLUSR_CUST_NO                                    			     AS rlusrCustNo
+	      ,(SELECT CUST_NM || ' ' || CUST_NM1 || ' ' || CUST_NM2 FROM ABA_CS_HB_CUST WHERE cust_no = a.RLUSR_CUST_NO )     AS rlusrCustNm
+	</sql>
+	
+	<sql id="getCustListWhere">
+		<if test="marketCode != null and marketCode != ''">
+ 			<!-- AND MARKET_CODE = #{marketCode} -->
+		</if>
+		<choose>     
+			<when test="filterMap.name != null and filterMap.name=='4CUNM'">
+		   	AND 
+		   	( 
+	    		UPPER(CUST_NM || ' ' || CUST_NM1 || ' ' || CUST_NM2)      LIKE   UPPER('%${filterMap.value}%')
+	    		OR
+	    		(UPPER(BIZ_COMP_NM) LIKE UPPER('%${filterMap.value}%'))
+	    	) 
+		    </when>
+			<when test="filterMap.name != null and filterMap.name=='5CUST'">
+		   	AND CUSTRNM_NO     = #{filterMap.value}
+			</when>
+		    <when test="filterMap.name != null and filterMap.name=='93HPNO'">
+		   	AND 
+		   	(
+	    		PHONE_NO  LIKE '%${filterMap.value}%'
+	    		OR
+	    		CUST_NO IN (
+		    		SELECT DISTINCT CUST_NO FROM ABA_CS_HB_CUST_CTPLC
+					WHERE CNTCT_PNT_TYPE_CD = '1'
+					AND CNTCT_FULL_NM LIKE '%${filterMap.value}%'
+	    		)
+	    	)
+		   	</when>	
+		   	<when test="filterMap.name != null and filterMap.name=='3BIZ'">
+		   	AND BS_REG_NO     = #{filterMap.value}
+			</when>	   	
+		</choose>
+	</sql>	
+	<sql id="getCustAddressListWhere">
+		<choose> 
+		<when test="filterMap.name != null and filterMap.name=='7ADDR'">
+		   	AND FULL_ADDR      LIKE   '%${filterMap.value}%'
+		</when>
+		</choose>
+	</sql>	
+	<sql id="getCustAndEntrListWhere">
+		<choose>     
+			<when test="filterMap.name != null and filterMap.name=='1PROD'">                                                                                       
+		   	AND A.PROD_NO        = #{filterMap.value}                   <!-- 상품번호   (파라미터 연동)       -->
+			</when> 
+			<when test="filterMap.name != null and filterMap.name=='8ENTR'">                                                                                              
+		   	AND A.ENTR_NO        = #{filterMap.value}                   <!-- 가입번호   (파라미터 연동)       -->
+		    </when>
+		    <when test="filterMap.name != null and filterMap.name=='6DEV'">                                                                                           
+		   	AND A.ENTR_NO IN (SELECT entr_no FROM ABA_DV_DEV_BY_ENTR WHERE devc_no = #{filterMap.value})
+			</when>
+			<when test="filterMap.name != null and filterMap.name=='MAC'">                                                                                           
+		   	AND A.ENTR_NO IN (SELECT a.entr_no FROM ABA_DV_DEV_BY_ENTR a, ABA_RE_RESOURCE_MSTR b
+					WHERE a.devc_no = b.devc_no
+					AND b.MAC_ADDR1 = #{filterMap.value})
+			</when>			                         
+			<when test="filterMap.name != null and filterMap.name=='2BILL'">
+		   	AND A.BILL_ACNT_NO     =    #{filterMap.value}
+		    </when>
+		    <when test="filterMap.name != null and filterMap.name=='7ADDR'">
+			   	AND B.FULL_ADDR      LIKE   '%${filterMap.value}%'
+			</when>
+		    <when test="filterMap.name != null and filterMap.name=='91CUSTID'">
+		   	AND D.CUST_NO     =   #{filterMap.value}
+		    </when>
+		    <when test="filterMap.name != null and filterMap.name=='92IMSI'">
+			  AND   A.ENTR_NO in (select ENTR_NO from aba_sb_entr where IMSI_NO=#{filterMap.value})  
+			</when>
+			<when test="filterMap.name != null and filterMap.name=='RLUSR_CUST_NO'">                                                                                               
+		   	AND A.RLUSR_CUST_NO  = #{filterMap.value}              <!-- 실사용자고객번호 (파라미터 연동) -->
+			</when>
+		    <when test="filterMap.name != null and filterMap.name=='RL_CUNM'">
+		   	AND A.RLUSR_CUST_NO IN (
+		   			SELECT DISTINCT CUST_NO 
+		   			FROM ABA_CS_HB_CUST 
+		   			WHERE ( 
+			    		UPPER(CUST_NM || ' ' || CUST_NM1 || ' ' || CUST_NM2) LIKE UPPER('%${filterMap.value}%')
+			    		OR
+			    		(UPPER(BIZ_COMP_NM) LIKE UPPER('%${filterMap.value}%'))
+			    	)  
+		   	)
+			</when>
+			<when test="filterMap.name != null and filterMap.name=='RL_CUST'">
+		   	AND A.RLUSR_CUST_NO IN (SELECT DISTINCT CUST_NO FROM ABA_CS_HB_CUST WHERE CUSTRNM_NO = UPPER(#{filterMap.value}))
+			</when>
+		    <when test="filterMap.name != null and filterMap.name=='RL_CUSTID'">
+		   	AND A.RLUSR_CUST_NO = #{filterMap.value}
+			</when>
+		    <when test="filterMap.name != null and filterMap.name=='RL_HPNO'">
+		   	AND A.RLUSR_CUST_NO IN
+		   	(
+	    		SELECT DISTINCT CUST_NO 
+	   			FROM ABA_CS_HB_CUST 
+	   			WHERE PHONE_NO LIKE '%${filterMap.value}%'
+	    		OR
+	    		CUST_NO IN (
+		    		SELECT DISTINCT CUST_NO FROM ABA_CS_HB_CUST_CTPLC
+					WHERE CNTCT_PNT_TYPE_CD = '1'
+					AND CNTCT_FULL_NM LIKE '%${filterMap.value}%'
+	    		)
+	    	)
+		   	</when>
+			<!-- <otherwise>
+		   	AND A.PROD_NO        = #{filterMap.value}                   상품번호   (파라미터 연동)      
+		   	</otherwise> -->
+		</choose>
+		
+		<choose>
+			<when test='filterMap.withTerminated eq null or filterMap.withTerminated eq "N"'>
+		   	   AND A.ENTR_STTS_CD != 'C'
+		   	</when>
+		</choose>
+		<choose>
+			<when test='filterMap.entrNo neq null and filterMap.entrNo != ""'>
+				<if test="filterMap.cnvgNo == null or filterMap.cnvgNo == ''">
+		   	   		AND A.ENTR_NO = #{filterMap.entrNo}
+				</if>
+		   	</when>
+		</choose>
+	</sql>
+	
+	<!--   -->
+	<select id="getCustAndEntrCustNo" parameterType="AsSearchFilter" resultType="string"> 
+		SELECT
+        		DISTINCT A.CUST_NO 
+	      FROM  ABA_SB_ENTR A
+	           ,ABA_SB_ENTR_CNTC CN
+		       ,ABA_SB_ESTB_ADDR B
+		       ,ABA_SB_CNVG C
+		       ,(SELECT * FROM ABA_CS_HB_CUST WHERE 1=1 <include refid="getCustListWhere"/>) D
+		 WHERE 1=1
+		   AND A.entr_no = CN.entr_no
+		   AND A.ACENO = CN.ACENO
+		   AND A.ESTB_ADDR_NO = B.ESTB_ADDR_NO(+)
+		   AND A.ENTR_NO = C.ENTR_NO(+)
+		   AND (NVL(C.CNVG_STTS_CD, '1') = '1'
+		   		OR (A.ENTR_STTS_CD IN ('C') AND C.CNVG_STTS_CD = 'C' )
+		   		OR (A.ENTR_STTS_CD IN ('A', 'S', 'T', 'R') AND C.CNVG_STTS_CD in ('A', 'T', 'R') )
+		   		)
+		   AND A.CUST_NO = D.CUST_NO
+		<include refid="getCustAndEntrListWhere"/>
+		<!-- ORDER BY A.entr_no DESC -->
+	</select>
+	<sql id="SQLgetCustAndEntrListWhere">
+			AND A.entr_no = CN.entr_no
+		 	AND A.ACENO = CN.ACENO
+		   	AND A.ESTB_ADDR_NO = B.ESTB_ADDR_NO(+)
+		   	AND A.ENTR_NO = C.ENTR_NO(+)
+		   	AND (NVL(C.CNVG_STTS_CD, '1') = '1'
+		   		OR (A.ENTR_STTS_CD IN ('C') AND C.CNVG_STTS_CD = 'C' )
+		   		OR (A.ENTR_STTS_CD IN ('A', 'S', 'T', 'R') AND C.CNVG_STTS_CD in ('A', 'T', 'R') )
+		   		)
+		   	AND A.CUST_NO = D.CUST_NO
+		<include refid="getCustAndEntrListWhere"/>
+	</sql>
+	<!--  count -->
+	<select id="getCustAndEntrListCount" parameterType="AsSearchFilter" resultType="int"> 
+	  with subs as (
+	    SELECT	<include refid="retrieveSearchEntrInfoColumn"/>
+	      FROM  ABA_SB_ENTR A
+	      	   ,ABA_SB_ENTR_CNTC CN
+		       ,ABA_SB_ESTB_ADDR B
+		       ,ABA_SB_CNVG C
+		       ,(SELECT * FROM ABA_CS_HB_CUST WHERE 1=1 <include refid="getCustListWhere"/>)D
+		 WHERE 1=1
+		 <include refid="SQLgetCustAndEntrListWhere"/>
+		   ORDER BY A.ENTR_STTS_CD, A.FRST_ENTR_DTTM DESC, A.SVC_CD
+     ), subsList as (
+			select decode(cnv.entr_no, null,null,decode(sub1.svccd,'1',null,sub1.cnvgno)) asParent
+			      ,decode(cnv.entr_no, null,'0',decode(sub1.svccd,'1','0','1')) asLevel
+			      ,decode(cnv.entr_no, null,'true',decode(sub1.svccd,'1','false','true')) asLeaf
+			      ,'false' asExpanded
+			      ,sub1.*
+			from subs sub1
+			     ,ABA_SB_CNVG cnv
+			where sub1.entrno = cnv.entr_no(+)
+			<!-- and decode(cnv.cnvg_stts_cd, null, 1, 'A', 2, 'C', 3) = case when cnv.cnvg_stts_cd is null then
+				1
+				when sub1.entrSttsCd = 'A' then
+				2
+				else
+				3
+				end -->
+		) 
+			SELECT COUNT(1) cnt FROM(
+				SELECT DISTINCT *
+				FROM subsList
+				WHERE 1=1
+			<if test="filterMap.treeYn != null and filterMap.treeYn != ''">
+				<choose>
+				<when test='filterMap.treeYn eq "0"'>
+				AND (asLevel = #{filterMap.treeYn} or cnvgno IS NULL)
+				</when>
+				<otherwise>
+				AND asLevel = #{filterMap.treeYn}
+				</otherwise>
+				</choose> 
+			</if>
+			<if test="filterMap.cnvgNo != null and filterMap.cnvgNo != ''">
+				 and cnvgNo = #{filterMap.cnvgNo}
+			</if>
+			)
+	</select>	
+	<select id="getCustAndEntrList" resultType="AsSearchCustEntrVO" parameterType="AsSearchFilter">
+	  with subs as (
+	    SELECT	<include refid="retrieveSearchEntrInfoColumn"/>
+	      FROM  ABA_SB_ENTR A
+	      	   ,ABA_SB_ENTR_CNTC CN
+		       ,ABA_SB_ESTB_ADDR B
+		       ,ABA_SB_CNVG C
+		       ,(SELECT * FROM ABA_CS_HB_CUST WHERE 1=1 <include refid="getCustListWhere"/>)D
+		 WHERE 1=1
+		 <include refid="SQLgetCustAndEntrListWhere"/>
+		   ORDER BY A.SVC_CD, A.ENTR_STTS_CD, A.FRST_ENTR_DTTM DESC
+     ), subsList as (
+			SELECT decode(cnv.entr_no, null,null,decode(sub1.svccd,'1',null,sub1.cnvgno)) asParent
+			      ,decode(cnv.entr_no, null,'0',decode(sub1.svccd,'1','0','1')) asLevel
+			      ,decode(cnv.entr_no, null,'true',decode(sub1.svccd,'1','false','true')) asLeaf
+			      ,'false' asExpanded
+			      ,sub1.*
+			FROM subs sub1
+			     ,ABA_SB_CNVG cnv
+			WHERE sub1.entrno = cnv.entr_no(+)
+			<!-- and decode(cnv.cnvg_stts_cd, null, 1, 'A', 2, 'C', 3) = case when cnv.cnvg_stts_cd is null then
+				1
+				when sub1.entrSttsCd = 'A' then
+				2
+				else
+				3
+				end -->
+		) 
+		SELECT DISTINCT *
+		FROM subsList
+		WHERE 1=1
+		<if test="filterMap.treeYn != null and filterMap.treeYn != ''">
+			<choose>
+			<when test='filterMap.treeYn eq "0"'>
+			AND (asLevel = #{filterMap.treeYn} or cnvgno IS NULL)
+			</when>
+			<otherwise>
+			AND asLevel = #{filterMap.treeYn}
+			</otherwise>
+			</choose> 
+		</if>
+		<if test="filterMap.cnvgNo != null and filterMap.cnvgNo != ''">
+			 AND cnvgNo = #{filterMap.cnvgNo}
+		</if>
+	</select> 
+	
+	<select id="getCustByCustNo" resultType="AsEntrCustomer" parameterType="AsSearchCustEntrVO">
+		SELECT CUST.CUST_NO  					as custNo
+			  ,CUST.MARKET_CODE					as marketCode		 
+			  ,CUST.CUST_DV_CD 					as custDvCd
+			  ,(SELECT MEANING FROM ABA_CO_FND_LOOKUP_VALUES SVC_CODE WHERE SVC_CODE.CCODE = CUST.CUST_DV_CD AND CCODE_GROUP = 'CustDvCd' AND LANGUAGE = #{language}) 		as custDvNm
+			  ,CUST.CUST_KD_CD					as custKdCd
+		      ,(SELECT MEANING FROM ABA_CO_FND_LOOKUP_VALUES SVC_CODE WHERE SVC_CODE.CCODE = CUST.CUST_KD_CD AND CCODE_GROUP = 'CustKdCd' AND LANGUAGE = #{language}) 		as custKdNm
+			  ,CUST.CUST_NM						as custNm
+			  ,CUST.CUST_NM1					as custNm1
+			  ,CUST.CUST_NM2					as custNm2
+			  ,CUST.CUST_NM || ' ' || CUST.CUST_NM1 || ' ' || CUST.CUST_NM2 as custFullNm
+			  ,CUST.CUSTRNM_NO					as custrnmNo
+			  ,CUST.BS_REG_NO					as bsRegNo
+			  ,CUST.BIZ_COMP_NM					as bizCompNm
+			  ,CUST.BIZ_REPT_NM					as bizReptNm
+		      ,CUST.AFCO_NM						as afcoNm
+		      ,CUST.INKND_CD					as inkndCd
+		      ,CUST.BSST_NM						as bsstNm
+		      ,CUST.INKND_NM					as inkndNm
+		      ,CUST.VAT_EXMPT_YN				as vatExmptYn
+		      ,CUST.CUST_SEX_DV_CD				as custSexDvCd
+		      ,CUST.HOBY_CD						as hobyCd
+		      ,CUST.CUST_BDAY					as custBday
+		      ,OCPN_CD							as ocpnCd
+		      ,CUST_RGST_DLR_CD					as custRgstDlrCd
+		      ,CUST_RGSTR						as custRgstr
+		      ,CUST.POSITION					as position
+		      ,CUST.AUTH_NO						as authNo
+		      ,CUST.AUTH_CODE					as authCode
+		      ,TO_CHAR(CUST.CUST_RGST_DTTM, 'YYYYMMDDHH24MISS')  		as custRgstDttm
+		      ,ADDR.CUST_ADDR_SEQNO				as custAttrSeqno
+		      ,ADDR.ADD_NUM						as addNum
+		      ,ADDR.CUST_VILG_ABV_ADDR			as custVilgAbvAddr
+		      ,ADDR.CUST_VILG_BLW_ADDR			as custVilgBlwAddr
+		      ,ADDR.FULL_ADDR					as fullAddr
+		      ,ADDR.CUST_BAS_ADDR_YN			as custVasAddrYn
+		      ,CUST.email_addr					as emailAddr
+		      ,( SELECT cntct_full_nm FROM aba_cs_hb_cust_ctplc WHERE cust_no = CUST.cust_no AND cntct_pnt_type_cd = '1' and cust_bas_ctplc_yn = '1' )	as fullTelNo
+		      ,USER_ID							as userId
+		      ,CUST_PSWD						as custPswd
+		      ,CUST.founded_date         		as foundedDate
+			  ,CUST.employee_cnt         		as employeeCnt
+		      ,CUST.template_code        		as templateCode
+		      ,CASE WHEN CUST.template_code IS NOT NULL THEN
+		       (SELECT TEMP_NAME FROM ABA_CO_CUG_TEMPLATE WHERE temp_seqno = CUST.template_code)
+		       ELSE
+		       ''
+		       END as templateName
+		      ,RELS.rels_trgt_cust_no			as relationshipTargetCustomerNo
+			  ,(SELECT cust_nm FROM aba_cs_hb_cust WHERE cust_no = RELS.rels_trgt_cust_no) relationshipTargetCustomerName
+			  ,CUST.phone_no				    as phoneNo
+			  ,CUST.ip77_phone_no				as ip77PhoneNo
+			  ,CUST.business_type				as businessType
+			  ,CUST.dscpt						as dscpt
+		FROM  ABA_CS_HB_CUST CUST 
+				 ,ABA_CS_HB_CUST_ADDR ADDR
+				 ,ABA_SB_PSWD_BY_ENTR PSWD
+				 ,(SELECT * FROM ABA_CS_HB_CUST_RELS WHERE relationship_type ='21'
+    				AND cust_no = #{custNo}
+    				AND SYSDATE between vald_strt_dt and vald_end_dt
+    				AND ROWNUM = 1) RELS
+		WHERE CUST.CUST_NO = ADDR.CUST_NO(+)
+		AND CUST.CUST_NO = PSWD.CUST_NO(+)
+		AND ADDR.CUST_BAS_ADDR_YN(+) = '1'		
+		AND CUST.CUST_NO = #{custNo}
+		AND CUST.cust_no = RELS.cust_no(+)		
+		AND (NVL(PSWD.PSWD_VALD_END_DT, TO_DATE('9999/12/31', 'YYYY/MM/DD')) = TO_DATE('9999/12/31', 'YYYY/MM/DD') or PSWD.PSWD_VALD_END_DT > SYSDATE)
+	</select> 
+	<select id="getSpecialInfoCount" parameterType="string" resultType="int"> 
+		SELECT COUNT(*) AS spclMttrCnt
+		  FROM ABA_SB_SPCL_MTTR
+		 WHERE CUST_NO =  #{custNo} 
+	</select>
+	<select id="getBlackListCount" parameterType="string" resultType="int"> 
+		SELECT COUNT(*) AS spclMttrCnt
+		  FROM ABA_CS_BLACK_LIST
+		WHERE PERS_NO = #{custNo} 
+		  AND EXPRY_DT &gt;= SYSDATE  
+	</select>
+	<select id="getContractBillInfo" resultType="AsEntrContractBill"  parameterType="AsSearchCustEntrVO">
+		SELECT 
+			 ENTR.ENTR_NO 				as entrNo
+			,ENTR.PROD_NO				as prodNo
+			,ENTR.ACENO					as aceno
+			,ENTR.SVC_CD				as svcCd
+			,ENTR.PPAY_ENTR_DV_CD		as ppayEntrDvCd
+			,FC_LOOKUP_NAME (ENTR.SVC_CD, 'SvcDomain',#{language}) 			as svvNm
+			,ENTR.CUST_NO				as custNo
+			,CUST.CUST_NM               as custNm
+			,CUST.CUST_NM1              as custNm1
+			,CUST.CUST_NM2              as custNm2
+			,CUST.CUST_NM || ' ' || CUST.CUST_NM1 || ' ' || CUST.CUST_NM2  as custFullNm
+            ,CUST.CUST_DV_CD            as custDvCd
+            ,FC_LOOKUP_NAME (CUST.CUST_DV_CD, 'CustKdCd',#{language})     as custDvNm
+            ,CUST.CUST_KD_CD            as custKdCd
+            ,FC_LOOKUP_NAME (CUST.CUST_KD_CD, 'CustKdCd',#{language})     as custKdNm
+            ,CUST.CUSTRNM_NO            as custrnmNo
+            ,CUST.BS_REG_NO             as bsRegNo
+            ,CUST.BIZ_COMP_NM           as bizCompNm
+            ,CUST.BIZ_REPT_NM           as bizReptNm
+            ,ENTR.VPN_REP_NO_YN			as vpnRepNoYn
+			,ENTR.RLUSR_CUST_NO			as rlusrCustNo
+	        ,(SELECT CUST.CUST_NM || ' ' || CUST.CUST_NM1 || ' ' || CUST.CUST_NM2 FROM ABA_CS_HB_CUST CUST1 WHERE CUST1.CUST_NO = ENTR.RLUSR_CUST_NO) as rlusrCustFullNm
+	        ,TO_CHAR(ENTR.ENTR_CHNG_DTTM, 'YYYY-MM-DD') as chngDttm
+	        ,TO_CHAR(ENTR.FRST_ENTR_DTTM, 'YYYY-MM-DD') as frstDttm
+	        ,ENTR.ENTR_STTS_CD			as entrSttsCd
+	        ,FC_LOOKUP_NAME (ENTR.ENTR_STTS_CD, 'SttsCd',#{language}) 				as entrSttsNm
+	        ,ENTR.ENTR_STTS_CHNG_RSN_CD as entrSttsChngRsnCd
+	        ,FC_LOOKUP_NAME (ENTR.ENTR_STTS_CHNG_RSN_CD, 'EventCd',#{language}) 	as entrSttsChngRsnNm
+	        ,ENTR.ENTR_STTS_CHNG_RSN_DTL_CD AS entrSttsChngRsnDtlCd
+	        ,FC_LOOKUP_NAME (ENTR.ENTR_STTS_CHNG_RSN_DTL_CD, 'EventDtlCd',#{language}) 			as entrSttsChngRsnDtlNm
+	        ,ENTR.ENTR_DLR_CD			as entrDlrCd
+	        ,(SELECT DLR_NM FROM ABA_RV_DLR_MSTR WHERE DLR_CD = ENTR.ENTR_DLR_CD AND DLR_STTS_DV_CD = 'A') as dlrCd 
+	        ,ENTR.MGMT_DLR_CD 			as mgmtDlrCd
+	        ,ENTR.MARKET_CODE 			as marketCode
+	        ,TO_CHAR(ENTR.ENTR_STTS_CHNG_DTTM, 'YYYY-MM-DD')  as sttsChngDttm
+	        ,ENTR.HOMECD_NO				as homecdNo
+	        ,ENTR.ESTB_ADDR_NO			as estbAddrNo
+	        ,ENTR.IMSI_NO				as imsiNo
+	        ,ENTR.MIN_NO				as minNo
+	        ,ENTR.PPAY_ENTR_DV_CD		as ppayEntrDvCd
+	        ,FC_LOOKUP_NAME (ENTR.PPAY_ENTR_DV_CD		, 'NumberType',#{language}) as ppayEntrDvNm
+	        ,ENTR.SPRT_RTNG_YN          as sprtRtngYn
+	        ,ENTR.HPNO					as hpno
+	        ,ENTR.INDC_ID				as indcId
+	        ,ENTR.MNGR_ID				as mngrId
+	        ,ENTR.REQ_DATE				as reqDate
+	        ,ENTR.BILL_ACNT_NO			as billAcntNo
+	        ,BILL.BILL_ADDR_SEQNO		as billAddrSeqno
+	        ,BILL.CNTCT_PNT_SEQNO		as billCntctPntSeqno
+	        ,BILL.PYM_MTHD_CD			as pymMthdCd
+	        ,FC_LOOKUP_NAME (BILL.PYM_MTHD_CD, 'BillPymMethod',#{language}) 			as pymMthdNm
+		    ,BILL.BANK_CD				as bankCd
+		    ,FC_LOOKUP_NAME (BILL.BANK_CD, 'BankCd',#{language}) 			as bankNm
+		    ,BILL.CDCMP_CD				as cdcmpCd
+		    ,FC_LOOKUP_NAME (BILL.CDCMP_CD, 'CardCd',#{language}) 			as cdcmpNm
+		    ,BILL.CARD_VALD_END_YYMM	as cardValdEndYymm
+		    ,BILL.PYM_CUST_NM			as pymCustNm
+		    ,BILL.PYM_CUST_SSN			as pymCustSsn
+		    ,BILL.ACCT_NO				as acctNo
+		    ,BILL.CARD_NO				as cardNo
+		    ,BILL.BLTXT_RCPT_MAN_NM		as bltxtRcptManNm
+		    ,BILL.BLTXT_KD_CD			as bltxtKdCd
+		    ,FC_LOOKUP_NAME (BILL.BLTXT_KD_CD, 'BltxtKdCd',#{language}) 			as bltxtKdNm
+		    ,BILL.BILL_EMAIL_ADDR		as billEmailAddr
+		    ,BILL.BILL_ACNT_STTS_CD		as billAcntSttsCd
+		    ,FC_LOOKUP_NAME (BILL.BILL_ACNT_STTS_CD, 'SttsCd',#{language}) 			as billAcntSttsNm
+		    ,BILL.ACNT_BLNC				as acntBlnc
+		    ,BILL.BILL_CYCL_CD			as billCyclCd
+		    ,BILL.BILL_CUR_CD 			as billCurCd
+		    ,BILL.MRKT_CD			as mrktCd
+		    ,FC_LOOKUP_NAME (BILL.BILL_CUR_CD, 'BillCurCd',#{language}) 			as billCurNm
+            ,BILL.MINIMUM_CHARGE        as mininumCharge
+            ,BILL.MINIMUM_MONTH         as mininumMonth
+            ,ENTR.RQST_STTS_CD          as entrRqstSttsCd
+            ,TO_CHAR(ENTR.ENTR_REQ_DATE, 'YYYY-MM-DD')as entrEntrReqDate
+            ,ENTR.RQST_STTS_CHNG_RSN_CD as entrRqstSttsChngRsnCd
+            ,ENTR.RQST_STTS_CHNG_RSN_DTL_CD as entrRqstSttsChngRsnDtlCd
+            ,BILL.RQST_STTS_CD          as billRqstSttsCd
+            ,trim(CNTC.LTPYM_STTS_CD)         as ltpymSttsCd
+            ,FC_LOOKUP_NAME (trim(CNTC.LTPYM_STTS_CD), 'LtpymSttsCd',#{language}) 			as ltpymSttsNm
+            ,TO_CHAR(CNTC.LTPYM_STTS_CHNG_DT, 'YYYY-MM-DD')  as ltpymSttsChngDt
+            ,ESTB.mdu_ip as mduIp
+            ,ESTB.mdu_port as mduPort
+			FROM ABA_SB_ENTR ENTR 
+			    ,ABA_SB_BILL_ACNT BILL
+                ,ABA_CS_HB_CUST CUST
+                ,ABA_SB_ENTR_CNTC CNTC
+                ,ABA_SB_ESTB_ADDR ESTB
+		WHERE ENTR.ENTR_NO = #{entrNo}
+		AND ENTR.CUST_NO = CUST.CUST_NO
+		AND ENTR.BILL_ACNT_NO = BILL.BILL_ACNT_NO
+		AND CNTC.ENTR_NO = ENTR.ENTR_NO
+		AND CNTC.ACENO = ENTR.ACENO
+		AND CNTC.BILL_ACNT_NO = ENTR.BILL_ACNT_NO
+		AND ENTR.ESTB_ADDR_NO = ESTB.ESTB_ADDR_NO(+)
+	</select>
+	
+	
+	<sql id="getCustAndEntrByEntrNoColumn">
+	  
+		   A.ENTR_NO                                        		         AS entrNo
+	      ,A.PROD_NO                                        		         AS prodNo
+	      ,A.ACENO                                          		         AS aceno
+	      ,A.BILL_ACNT_NO                                                    AS billAcntNo
+	      ,A.SVC_CD                                                          AS svcCd
+	      ,FC_LOOKUP_NAME (A.SVC_CD, 'SvcDomain',#{language})      AS svcNm
+	      ,A.CUST_NO                                                         AS custNo
+	      ,D.CUST_NM || ' ' || CUST_NM1 || ' ' || CUST_NM2                   AS custNm
+	      ,D.CUST_NM                  AS custNm0
+	      ,D.CUST_NM1                  AS custNm1
+	      ,D.CUST_NM2                  AS custNm2
+	      ,D.CUSTRNM_NO                                                      AS custrnmNo
+	      ,D.BS_REG_NO                                                       AS bsRegNo
+	      ,D.BIZ_COMP_NM                                                     AS bizRegNm
+	      ,TO_CHAR(A.FRST_ENTR_DTTM, 'YYYYMMDDHH24MISS')                     AS frstEntrDttm
+	      ,A.ENTR_STTS_CD                                                    AS entrSttsCd
+	      ,FC_LOOKUP_NAME (A.ENTR_STTS_CD, 'SttsCd',#{language})   AS entrSttsNm
+	      ,ENTR_STTS_CHNG_RSN_CD                            				 AS entrSttsChngRsnCd
+	      ,FC_LOOKUP_NAME (A.ENTR_STTS_CHNG_RSN_CD, 'EventCd',#{language})      		AS entrSttsChngRsnNm
+	      ,ENTR_STTS_CHNG_RSN_DTL_CD                        			     AS entrSttsChngRsnDtlCd
+	      ,FC_LOOKUP_NAME (A.ENTR_STTS_CHNG_RSN_DTL_CD, 'EventDtlCd',#{language})     AS entrSttsChngRsnDtlNm
+	      ,A.ESTB_ADDR_NO                                  					 AS estbAddrNo
+	      ,B.FULL_ADDR                                     					 AS fullAddr
+	      ,A.PPAY_ENTR_DV_CD                               					 AS ppayEntrDvCd
+	      ,FC_LOOKUP_NAME (A.PPAY_ENTR_DV_CD, 'NumberType',#{language})   			AS ppayEntrDvNm
+	      ,C.CNVG_NO                                       					 AS cnvgNo
+	      ,C.CNVG_KD_CD                                    					 AS cnvgKdCd
+	      ,CASE WHEN C.CNVG_KD_CD IS NOT NULL THEN
+	       	 (SELECT prod_name FROM ABA_PD_PRODUCT WHERE prod_cd = C.CNVG_KD_CD)
+	       ELSE
+	       ''
+	       END AS cnvgKdNm
+	      ,FC_LOOKUP_NAME (D.CUST_DV_CD, 'CustDvCd',#{language})     as custDvNm
+	</sql>
+	
+	<select id="getCustAndEntrByEntrNo" resultType="AsSearchCustEntrVO" parameterType="AsSearchCustEntrVO">
+	    SELECT	<include refid="getCustAndEntrByEntrNoColumn"/>
+	      FROM  ABA_SB_ENTR A
+		       ,ABA_SB_ESTB_ADDR B
+		       ,ABA_SB_CNVG C
+		       ,ABA_CS_HB_CUST D
+		 WHERE A.ESTB_ADDR_NO = B.ESTB_ADDR_NO(+)
+		   AND A.ENTR_NO = C.ENTR_NO(+)
+		   AND (NVL(C.CNVG_STTS_CD, '1') = '1'
+		   		OR (A.ENTR_STTS_CD IN ('C') AND C.CNVG_STTS_CD = 'C' )
+		   		OR (A.ENTR_STTS_CD IN ('A', 'S', 'T', 'R') AND C.CNVG_STTS_CD in ('A','T', 'R') )
+		   		)
+		   AND A.CUST_NO = D.CUST_NO
+		   AND A.ENTR_NO = #{entrNo}
+	</select> 
+	
+	
+	<select id="getContractBillInfoByProdNo" resultType="AsEntrContractBill"  parameterType="AsSearchCustEntrVO">
+		SELECT 
+			 ENTR.ENTR_NO 				as entrNo
+			,ENTR.PROD_NO				as prodNo
+			,ENTR.ACENO					as aceno
+			,ENTR.SVC_CD				as svcCd
+			,FC_LOOKUP_NAME (ENTR.SVC_CD, 'SvcDomain',#{language}) 			as svvNm
+			,ENTR.CUST_NO				as custNo
+			,CUST.CUST_NM               as custNm
+			,CUST.CUST_NM1              as custNm1
+			,CUST.CUST_NM2              as custNm2
+			,CUST.CUST_NM || ' ' || CUST.CUST_NM1 || ' ' || CUST.CUST_NM2  as custFullNm
+            ,CUST.CUST_DV_CD            as custDvCd
+            ,FC_LOOKUP_NAME (CUST.CUST_DV_CD, 'CustKdCd',#{language})     as custDvNm
+            ,CUST.CUST_KD_CD            as custKdCd
+            ,FC_LOOKUP_NAME (CUST.CUST_KD_CD, 'CustKdCd',#{language})     as custKdNm
+            ,CUST.CUSTRNM_NO            as custrnmNo
+            ,CUST.BS_REG_NO             as bsRegNo
+            ,CUST.BIZ_COMP_NM           as bizCompNm
+            ,CUST.BIZ_REPT_NM           as bizReptNm
+            ,ENTR.VPN_REP_NO_YN			as vpnRepNoYn
+			,ENTR.RLUSR_CUST_NO			as rlusrCustNo
+	        ,(SELECT CUST.CUST_NM || ' ' || CUST.CUST_NM1 || ' ' || CUST.CUST_NM2 FROM ABA_CS_HB_CUST CUST1 WHERE CUST1.CUST_NO = ENTR.RLUSR_CUST_NO) as rlusrCustFullNm
+	        ,TO_CHAR(ENTR.ENTR_CHNG_DTTM, 'YYYY-MM-DD') as chngDttm
+	        ,TO_CHAR(ENTR.FRST_ENTR_DTTM, 'YYYY-MM-DD') as frstDttm
+	        ,ENTR.ENTR_STTS_CD			as entrSttsCd
+	        ,FC_LOOKUP_NAME (ENTR.ENTR_STTS_CD, 'SttsCd',#{language}) 				as entrSttsNm
+	        ,ENTR.ENTR_STTS_CHNG_RSN_CD as entrSttsChngRsnCd
+	        ,FC_LOOKUP_NAME (ENTR.ENTR_STTS_CHNG_RSN_CD, 'EventCd',#{language}) 	as entrSttsChngRsnNm
+	        ,ENTR.ENTR_STTS_CHNG_RSN_DTL_CD AS entrSttsChngRsnDtlCd
+	        ,FC_LOOKUP_NAME (ENTR.ENTR_STTS_CHNG_RSN_DTL_CD, 'EventDtlCd',#{language}) 			as entrSttsChngRsnDtlNm
+	        ,ENTR.ENTR_DLR_CD			as entrDlrCd
+	        ,(SELECT DLR_NM FROM ABA_RV_DLR_MSTR WHERE DLR_CD = ENTR.ENTR_DLR_CD AND DLR_STTS_DV_CD = 'A') as dlrCd 
+	        ,ENTR.MGMT_DLR_CD 			as mgmtDlrCd
+	        ,ENTR.MARKET_CODE 			as marketCode
+	        ,TO_CHAR(ENTR.ENTR_STTS_CHNG_DTTM, 'YYYY-MM-DD')  as sttsChngDttm
+	        ,ENTR.HOMECD_NO				as homecdNo
+	        ,ENTR.ESTB_ADDR_NO			as estbAddrNo
+	        ,ENTR.IMSI_NO				as imsiNo
+	        ,ENTR.MIN_NO				as minNo
+	        ,ENTR.PPAY_ENTR_DV_CD		as ppayEntrDvCd
+	        ,FC_LOOKUP_NAME (ENTR.PPAY_ENTR_DV_CD		, 'NumberType',#{language}) as ppayEntrDvNm
+	        ,ENTR.SPRT_RTNG_YN          as sprtRtngYn
+	        ,ENTR.HPNO					as hpno
+	        ,ENTR.INDC_ID				as indcId
+	        ,ENTR.MNGR_ID				as mngrId
+	        ,ENTR.REQ_DATE				as reqDate
+	        ,ENTR.BILL_ACNT_NO			as billAcntNo
+	        ,BILL.BILL_ADDR_SEQNO		as billAddrSeqno
+	        ,BILL.CNTCT_PNT_SEQNO		as billCntctPntSeqno
+	        ,BILL.PYM_MTHD_CD			as pymMthdCd
+	        ,FC_LOOKUP_NAME (BILL.PYM_MTHD_CD, 'BillPymMethod',#{language}) 			as pymMthdNm
+		    ,BILL.BANK_CD				as bankCd
+		    ,FC_LOOKUP_NAME (BILL.BANK_CD, 'BankCd',#{language}) 			as bankNm
+		    ,BILL.CDCMP_CD				as cdcmpCd
+		    ,FC_LOOKUP_NAME (BILL.CDCMP_CD, 'CardCd',#{language}) 			as cdcmpNm
+		    ,BILL.CARD_VALD_END_YYMM	as cardValdEndYymm
+		    ,BILL.PYM_CUST_NM			as pymCustNm
+		    ,BILL.PYM_CUST_SSN			as pymCustSsn
+		    ,BILL.ACCT_NO				as acctNo
+		    ,BILL.CARD_NO				as cardNo
+		    ,BILL.BLTXT_RCPT_MAN_NM		as bltxtRcptManNm
+		    ,BILL.BLTXT_KD_CD			as bltxtKdCd
+		    ,FC_LOOKUP_NAME (BILL.BLTXT_KD_CD, 'BltxtKdCd',#{language}) 			as bltxtKdNm
+		    ,BILL.BILL_EMAIL_ADDR		as billEmailAddr
+		    ,BILL.BILL_ACNT_STTS_CD		as billAcntSttsCd
+		    ,FC_LOOKUP_NAME (BILL.BILL_ACNT_STTS_CD, 'SttsCd',#{language}) 			as billAcntSttsNm
+		    ,BILL.ACNT_BLNC				as acntBlnc
+		    ,BILL.BILL_CYCL_CD			as billCyclCd
+		    ,BILL.BILL_CUR_CD 			as billCurCd
+		    ,BILL.MRKT_CD			as mrktCd
+		    ,FC_LOOKUP_NAME (BILL.BILL_CUR_CD, 'BillCurCd',#{language}) 			as billCurNm
+            ,BILL.MINIMUM_CHARGE        as mininumCharge
+            ,BILL.MINIMUM_MONTH         as mininumMonth
+            ,ENTR.RQST_STTS_CD          as entrRqstSttsCd
+            ,TO_CHAR(ENTR.ENTR_REQ_DATE, 'YYYY-MM-DD')as entrEntrReqDate
+            ,ENTR.RQST_STTS_CHNG_RSN_CD as entrRqstSttsChngRsnCd
+            ,ENTR.RQST_STTS_CHNG_RSN_DTL_CD as entrRqstSttsChngRsnDtlCd
+            ,BILL.RQST_STTS_CD          as billRqstSttsCd
+            ,trim(CNTC.LTPYM_STTS_CD)         as ltpymSttsCd
+            ,FC_LOOKUP_NAME (trim(CNTC.LTPYM_STTS_CD), 'LtpymSttsCd',#{language}) 			as ltpymSttsNm
+            ,TO_CHAR(CNTC.LTPYM_STTS_CHNG_DT, 'YYYY-MM-DD')  as ltpymSttsChngDt
+			FROM ABA_SB_ENTR ENTR 
+			    ,ABA_SB_BILL_ACNT BILL
+                ,ABA_CS_HB_CUST CUST
+                ,ABA_SB_ENTR_CNTC CNTC
+		WHERE ENTR.PROD_NO = #{prodNo}
+		AND ENTR.CUST_NO = CUST.CUST_NO
+		AND ENTR.BILL_ACNT_NO = BILL.BILL_ACNT_NO
+		AND ENTR.ENTR_STTS_CD IN ('A','S')
+		AND CNTC.ENTR_NO = ENTR.ENTR_NO
+		AND CNTC.ACENO = ENTR.ACENO
+		AND CNTC.BILL_ACNT_NO = ENTR.BILL_ACNT_NO
+	</select>
+	
+	<select id="getCustAndEntrByProdNo" resultType="AsSearchCustEntrVO" parameterType="AsSearchCustEntrVO">
+	    SELECT	<include refid="getCustAndEntrByEntrNoColumn"/>
+	      FROM  ABA_SB_ENTR A
+		       ,ABA_SB_ESTB_ADDR B
+		       ,ABA_SB_CNVG C
+		       ,ABA_CS_HB_CUST D
+		 WHERE A.ESTB_ADDR_NO = B.ESTB_ADDR_NO(+)
+		   AND A.ENTR_NO = C.ENTR_NO(+)
+		   AND (NVL(C.CNVG_STTS_CD, '1') = '1'
+		   		OR (A.ENTR_STTS_CD IN ('C') AND C.CNVG_STTS_CD = 'C' )
+		   		OR (A.ENTR_STTS_CD IN ('A', 'S', 'T', 'R') AND C.CNVG_STTS_CD in ('A','T', 'R') )
+		   		)
+		   AND A.CUST_NO = D.CUST_NO
+		   AND A.PROD_NO = #{prodNo}
+		   AND A.ENTR_STTS_CD in ('A','S')
+	</select>
+	
+	
+	<select id="getCustBySearchKey" resultType="AsEntrCustomer" parameterType="AsSearchFilter">
+		SELECT DISTINCT CUST.CUST_NO  					as custNo
+			  ,CUST.MARKET_CODE					as marketCode		 
+			  ,CUST.CUST_DV_CD 					as custDvCd
+			  ,(SELECT MEANING FROM ABA_CO_FND_LOOKUP_VALUES SVC_CODE WHERE SVC_CODE.CCODE = CUST.CUST_DV_CD AND CCODE_GROUP = 'CustDvCd' AND LANGUAGE = #{filterMap.operator.lang}) as custDvNm
+			  ,CUST.CUST_KD_CD					as custKdCd
+		      ,(SELECT MEANING FROM ABA_CO_FND_LOOKUP_VALUES SVC_CODE WHERE SVC_CODE.CCODE = CUST.CUST_KD_CD AND CCODE_GROUP = 'CustKdCd' AND LANGUAGE = #{filterMap.operator.lang}) as custKdNm
+			  ,CUST.CUST_NM						as custNm
+			  ,CUST.CUST_NM1					as custNm1
+			  ,CUST.CUST_NM2					as custNm2
+			  ,CUST.CUST_NM || ' ' || CUST.CUST_NM1 || ' ' || CUST.CUST_NM2 as custFullNm
+			  ,CUST.CUSTRNM_NO					as custrnmNo
+			  ,CUST.BS_REG_NO					as bsRegNo
+			  ,CUST.BIZ_COMP_NM					as bizCompNm
+			  ,CUST.BIZ_REPT_NM					as bizReptNm
+		      ,CUST.AFCO_NM						as afcoNm
+		      ,CUST.INKND_CD					as inkndCd
+		      ,CUST.BSST_NM						as bsstNm
+		      ,CUST.INKND_NM					as inkndNm
+		      ,CUST.VAT_EXMPT_YN				as vatExmptYn
+		      ,CUST.CUST_SEX_DV_CD				as custSexDvCd
+		      ,CUST.HOBY_CD						as hobyCd
+		      ,CUST.CUST_BDAY					as custBday
+		      ,OCPN_CD							as ocpnCd
+		      ,CUST_RGST_DLR_CD					as custRgstDlrCd
+		      ,CUST_RGSTR						as custRgstr
+		      ,CUST.POSITION					as position
+		      ,CUST.AUTH_NO						as authNo
+		      ,CUST.AUTH_CODE					as authCode
+		      ,TO_CHAR(CUST.CUST_RGST_DTTM, 'YYYYMMDDHH24MISS')  		as custRgstDttm
+		      ,ADDR.CUST_ADDR_SEQNO				as custAttrSeqno
+		      ,ADDR.ADD_NUM						as addNum
+		      ,ADDR.CUST_VILG_ABV_ADDR			as custVilgAbvAddr
+		      ,ADDR.CUST_VILG_BLW_ADDR			as custVilgBlwAddr
+		      ,ADDR.FULL_ADDR					as fullAddr
+		      ,ADDR.CUST_BAS_ADDR_YN			as custVasAddrYn
+		      ,email_addr	as emailAddr
+		      ,( SELECT cntct_full_nm FROM aba_cs_hb_cust_ctplc WHERE cust_no = CUST.cust_no AND cntct_pnt_type_cd = '1' and cust_bas_ctplc_yn = '1' )	as fullTelNo
+		      ,USER_ID							as userId
+		      ,CUST_PSWD						as custPswd		      
+		      ,CUST.founded_date         		as foundedDate
+			  ,CUST.employee_cnt         		as employeeCnt
+		      ,CUST.template_code        		as templateCode
+		      ,CASE WHEN CUST.template_code IS NOT NULL THEN
+		       (SELECT TEMP_NAME FROM ABA_CO_CUG_TEMPLATE WHERE temp_seqno = CUST.template_code)
+		       ELSE
+		       ''
+		       END as templateName
+		      ,RELS.rels_trgt_cust_no			as relationshipTargetCustomerNo
+			  ,(SELECT cust_nm FROM aba_cs_hb_cust WHERE cust_no = RELS.rels_trgt_cust_no) relationshipTargetCustomerName
+			  ,CUST.phone_no				    as phoneNo
+			  ,CUST.ip77_phone_no				as ip77PhoneNo
+			  ,CUST.business_type				as businessType
+			  ,CUST.dscpt						as dscpt
+			  
+		      
+		FROM  ABA_CS_HB_CUST CUST 
+			 ,ABA_CS_HB_CUST_ADDR ADDR
+			 ,ABA_SB_PSWD_BY_ENTR PSWD
+			 ,ABA_SB_ENTR ENTR
+			 ,(SELECT * FROM ABA_CS_HB_CUST_RELS WHERE relationship_type ='21'
+    				AND SYSDATE between vald_strt_dt and vald_end_dt) RELS
+	  WHERE 
+	  	CUST.CUST_NO 	 = ADDR.CUST_NO(+)
+		AND CUST.CUST_NO = PSWD.CUST_NO(+)
+		AND CUST.cust_no = RELS.cust_no(+)
+		AND ADDR.CUST_BAS_ADDR_YN(+) = '1'
+		AND ENTR.CUST_NO(+) = CUST.CUST_NO
+		<if test="count > 0">
+		   <foreach collection="filters" separator=" AND " item="filter" index="index">	
+			<choose> 		  	
+				<when test="filter.name != null and filter.name=='3BIZ'">
+			    AND CUST.BS_REG_NO     = #{filter.value}
+				</when>
+				<when test="filter.name != null and filter.name=='4CUNM'">
+			    AND ( 
+			    		(UPPER(CUST.CUST_NM) || ' ' || UPPER(CUST_NM1) || ' ' || UPPER(CUST_NM2) LIKE   UPPER('%${filter.value}%'))
+			    		OR
+			    		(UPPER(CUST.BIZ_COMP_NM) LIKE UPPER('%${filter.value}%'))
+			    	) 
+			    </when>
+				<when test="filter.name != null and filter.name=='5CUST'">
+			    AND CUST.CUSTRNM_NO     = #{filter.value}
+			    </when>
+			    <when test="filter.name != null and filter.name=='6DEV'">
+			    AND ENTR.ENTR_NO IN (SELECT entr_no FROM ABA_DV_DEV_BY_ENTR WHERE devc_no = #{filter.value})
+			    </when>
+			    <when test="filter.name != null and filter.name=='MAC'">
+			    AND ENTR.ENTR_NO IN (SELECT a.entr_no FROM ABA_DV_DEV_BY_ENTR a, ABA_RE_RESOURCE_MSTR b
+					WHERE a.devc_no = b.devc_no
+					AND b.MAC_ADDR1 = #{filter.value})
+			    </when>
+			    <when test="filter.name != null and filter.name=='7ADDR'">
+			    AND ADDR.FULL_ADDR      LIKE   '%${filter.value}%'
+			    </when>
+			    <when test="filter.name != null and filter.name=='91CUSTID'">
+			    AND CUST.CUST_NO = #{filter.value}
+			    </when>
+			    <when test="filter.name != null and filter.name=='8ENTR'">
+			    AND ENTR.ENTR_NO = #{filter.value}  
+			    </when>
+			    <when test="filter.name != null and filter.name=='2BILL'">
+			    AND ENTR.BILL_ACNT_NO = #{filter.value}  
+			    </when>
+			    <when test="filter.name != null and filter.name=='92IMSI'">
+			    AND ENTR.IMSI_NO = #{filter.value}  
+			    </when>
+			    <when test="filter.name != null and filter.name=='93HPNO'">
+			    AND (
+			    		CUST.PHONE_NO  LIKE '%${filterMap.value}%'
+			    		OR
+			    		CUST.CUST_NO IN (
+				    		SELECT DISTINCT CUST_NO FROM ABA_CS_HB_CUST_CTPLC
+							WHERE CNTCT_PNT_TYPE_CD = '1'
+							AND CNTCT_FULL_NM LIKE '%${filter.value}%'
+			    		)
+			    	)
+			    </when>
+			    <when test="filter.name != null and filter.name=='1PROD'">
+			    AND ENTR.PROD_NO = #{filter.value}  
+			    </when>
+			    <when test="filter.name != null and filter.name=='RL_CUNM'">
+			   	AND CUST.RLUSR_CUST_NO IN (
+			   			SELECT DISTINCT CUST_NO 
+			   			FROM ABA_CS_HB_CUST 
+			   			WHERE ( 
+				    		UPPER(CUST_NM || ' ' || CUST_NM1 || ' ' || CUST_NM2) LIKE UPPER('%${filter.value}%')
+				    		OR
+				    		(UPPER(BIZ_COMP_NM) LIKE UPPER('%${filter.value}%'))
+				    	)  
+			   	)
+				</when>
+			    <when test="filter.name != null and filter.name=='RL_CUST'">
+			   	AND CUST.RLUSR_CUST_NO IN (SELECT DISTINCT CUST_NO FROM ABA_CS_HB_CUST WHERE CUSTRNM_NO = #{filter.value})
+				</when>
+			    <when test="filter.name != null and filter.name=='RL_CUSTID'">
+			   	AND CUST.RLUSR_CUST_NO = #{filter.value}
+				</when>
+			    <when test="filter.name != null and filter.name=='RL_HPNO'">
+			   	AND CUST.RLUSR_CUST_NO IN
+			   	(
+		    		SELECT DISTINCT CUST_NO 
+		   			FROM ABA_CS_HB_CUST 
+		   			WHERE PHONE_NO LIKE '%${filter.value}%'
+		    		OR
+		    		CUST_NO IN (
+			    		SELECT DISTINCT CUST_NO FROM ABA_CS_HB_CUST_CTPLC
+						WHERE CNTCT_PNT_TYPE_CD = '1'
+						AND CNTCT_FULL_NM LIKE '%${filter.value}%'
+		    		)
+		    	)
+			   	</when>
+			    <when test="filter.name != null and filter.name=='RLUSR_CUST_NO'">
+			    AND ENTR.RLUSR_CUST_NO  = #{filter.value}
+			    </when>
+<!-- 			    <otherwise> -->
+<!-- 			    CUST.CUST_NO = '-1' -->
+<!-- 			     </otherwise> -->
+			</choose>
+		</foreach>
+		</if>
+		<if test="marketCode != null and marketCode != ''">
+			<!-- AND CUST.MARKET_CODE = #{marketCode} -->
+		</if>
+		<!-- AND PSWD.PSWD_VALD_END_DT > SYSDATE -->
+	</select>  
+	
+	<select id="getRspEntr" parameterType="AsSusRspEntrVO" resultType="AsSusRspEntrVO">
+		SELECT DECODE(a.entr_stts_chng_rsn_cd , 'SUS', 'SUSPEND','RESUME') AS entrSttsNm
+		  	   , '' AS cnvgKdCd
+		       ,FC_LOOKUP_NAME (A.SVC_CD, 'SvcDomain','en') AS svcNm 
+		       ,a.prod_no AS prodNo
+		       ,a.entr_no AS entrNo
+		       , SYSDATE AS entrSttsChngDttm
+		       ,FC_LOOKUP_NAME (A.ENTR_STTS_CHNG_RSN_DTL_CD, 'EventDtlCd','en')     AS entrSttsChngRsnDtlNm
+		       , '1' AS keyId
+		       ,svc_cd AS svcCd
+		       ,operator_id AS operatorId
+		  FROM ABA_SB_ENTR a 
+		WHERE entr_no = #{entrNo}
+	</select>
+	
+	<update id="updateSusrspWorkTodo" parameterType="AsSusRspEntrVO">
+		UPDATE ABA_SB_SUSRSP_WORK_TODO
+		  SET SYS_UPDATE_DATE = SYSDATE
+		    , PRSS_YN = 'Y'
+		WHERE entr_no = #{entrNo}
+		  AND evnt_cd = #{evntCd}
+	</update>
+	<update id="errorSusrspWorkTodo" parameterType="AsSusRspEntrVO">
+		UPDATE ABA_SB_SUSRSP_WORK_TODO
+		  SET SYS_UPDATE_DATE = SYSDATE
+		    , PRSS_YN = 'E'
+		WHERE entr_no = #{entrNo}
+		  AND evnt_cd = #{evntCd}
+	</update>
+	<update id="updateSbEntrCntc" parameterType="AsSbEntrCntcVO">
+		UPDATE ABA_SB_ENTR_CNTC
+		   SET LTPYM_STTS_CD = trim(#{ltpymSttsCd,jdbcType=VARCHAR})
+		     , LTPYM_STTS_CHNG_DT = SYSDATE
+		 WHERE ENTR_NO = #{entrNo}
+		   AND ACENO = #{aceNo}
+	</update>
+	
+	<select id="searchFtrCd" parameterType="AsFeature" resultType="AsFeature">
+		<!-- select prov_ftr_cd as provFtrCd
+		  from aba_co_suspend_ftr_map
+		 where suspend_type = #{suspendType}
+		   and ocs_status = #{ocsStatus} -->
+		   
+	  select a.prov_ftr_cd as provFtrCd,
+		       c.ENTR_SVC_SEQNO as entrSvcSeqno,
+		       c.prod_cd as prodCd,
+		       c.svc_cd as svcCd
+        from aba_co_suspend_ftr_map a, 
+             aba_pd_product b,
+             aba_sb_svc_by_entr c
+        where a.life_cycle_id = b.life_cycle_scheme 
+         and a.suspend_type = #{suspendType}
+         and a.ocs_status = #{ocsStatus}
+        and b.prod_cd = c.prod_cd
+        and c.SVC_KD_CD = '01'
+        and c.entr_no  = #{entrNo}
+        and c.svc_stts_cd = 'A'
+        
+	</select>
+	
+	<!-- 13.05.13추가 -->
+	<select id="getLtpymSttsCd" parameterType="AsSearchCustEntrVO" resultType="String">
+		SELECT
+     		FC_LOOKUP_NAME(trim(LTPYM_STTS_CD), 'OcsSubStatus','en')
+     	FROM ABA_SB_ENTR_CNTC
+     	WHERE  ACENO	= #{aceno}
+	</select>
+	
+	<select id="getLtpymSttsCdByAceNo" parameterType="String" resultType="String">
+		SELECT 
+     		   trim(LTPYM_STTS_CD) AS ltpymSttsCd
+     	FROM ABA_SB_ENTR_CNTC
+     	WHERE  ACENO	= #{aceno}
+	</select>
+	
+<select id="csEntrUnpaidAmt" parameterType="AsSearchCustEntrVO" resultType="AsSearchCustEntrVO">	
+	SELECT 
+	   a.entr_no,
+       a.prod_no,
+       sum(nvl(chrg_amt-pym_amt-bill_acnt_lvl_adjmt_amt-chrg_lvl_adjmt_amt-bltime_dscnt_amt,0)) unpaidAmt 
+  FROM aba_sb_entr a,
+       ABA_AR_INVS b 
+ WHERE a.bill_acnt_no=b.BILL_ACNT_NO 
+       AND a.prod_no =#{prodNo} 
+       AND b.CHRG_CPAY_YN = '0' 
+       AND a.entr_stts_cd IN ('A','S') 
+ GROUP BY a.entr_no,
+       a.prod_no
+</select>		
+</mapper>

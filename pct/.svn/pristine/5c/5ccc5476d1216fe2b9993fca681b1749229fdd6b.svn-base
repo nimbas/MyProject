@@ -1,0 +1,67 @@
+package com.acube.pvs.service;
+
+import java.io.File;
+import java.util.Date;
+import java.util.List;
+
+import com.acube.common.domain.jqgrid.JQueryGrid;
+import com.acube.common.domain.searchFilter.SearchFilter;
+import com.acube.common.pagination.Pagination;
+import com.acube.pvs.domain.PsProd;
+import com.acube.pvs.domain.PsProvFtr;
+
+public interface ProdFeatureService {
+
+	// 상품조회
+	JQueryGrid<PsProd> getProducts(SearchFilter searchFilter, Pagination pagination);
+
+	JQueryGrid<PsProd> getProductsByChannel(SearchFilter searchFilter, Pagination pagination);
+
+	PsProd getProduct(PsProd prod);
+
+	// 상품별 Feature 등록
+	int addProvFeatureByProduct(PsProd prod);
+
+	// Feature 조회 by product
+	JQueryGrid<PsProvFtr> getProvFeaturesByProd(SearchFilter searchFilter);
+
+	// 전체 Feature 조회
+	JQueryGrid<PsProvFtr> getProvFeatures(SearchFilter searchFilter, Pagination pagination);
+
+	JQueryGrid<PsProvFtr> getProvFeatures(SearchFilter searchFilter);
+
+	// Feature 상세 정보
+	PsProvFtr getProvFeature(PsProvFtr provFtr);
+
+	// Feature 등록
+	int addProvFeatur(PsProvFtr provFtr);
+
+	// Feature 수정
+	int updateProvFeatur(PsProvFtr provFtr);
+
+	// Feature 삭제
+	int deleteProvFeatur(PsProvFtr provFtr);
+
+	/**
+	 * @param list
+	 *            TODO
+	 * @param excelFile
+	 * @param workDate
+	 * @param operatorId
+	 * @param appId
+	 */
+	void processProdFeatureForExcel(List<Object> list, File excelFile, Date workDate, String operatorId, String appId);
+
+	/**
+	 * @param list
+	 *            TODO
+	 * @param excelFile
+	 * @param workDate
+	 * @param operatorId
+	 * @param appId
+	 */
+	void processFeatureForExcel(List<Object> list, File excelFile, Date workDate, String operatorId, String appId);
+
+	// List<PsProvFtr> getProvFeatures(SearchFilter searchFilter);
+
+}

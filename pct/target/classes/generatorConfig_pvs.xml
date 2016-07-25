@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+  PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+  "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+
+<generatorConfiguration>
+	<classPathEntry
+		location="C:\Users\kangyou\.m2\repository\com\oracle\ojdbc6\11.1.0.7.0\ojdbc6-11.1.0.7.0.jar" />
+
+	<context id="OracleTables" targetRuntime="MyBatis3">
+
+		<!-- Plugin -->
+		<plugin type="org.mybatis.generator.plugins.RowBoundsPlugin" />
+		
+		<!-- jdbc:oracle:thin:@//[HOST][:PORT]/SERVICE -->
+		<jdbcConnection driverClass="oracle.jdbc.driver.OracleDriver"
+			connectionURL="jdbc:oracle:thin:@211.238.176.44:1521:MONGBILL"
+			userId="pmsadm" password="pmsadm!1">
+		</jdbcConnection>
+
+		<javaTypeResolver>
+			<property name="forceBigDecimals" value="false" />
+		</javaTypeResolver>
+
+		<javaModelGenerator targetPackage="com.acube.pvs.domain" targetProject="pct">
+		<property name="rootClass" value="com.acube.common.domain.BaseDomain" />
+		</javaModelGenerator>
+
+		<sqlMapGenerator targetPackage="com.acube.pvs.mapper.mbg"
+			targetProject="pct\src\main\resources">
+			<property name="enableSubPackages" value="false" />
+		</sqlMapGenerator>
+
+		<javaClientGenerator type="XMLMAPPER"
+			targetPackage="com.acube.pvs.mapper.mbg" targetProject="pct">
+		</javaClientGenerator>
+
+		<!-- SET TABLE NAME FOR CREATING -->
+		<table schema="pmsadm"  tableName="ABA_PS_SYS_CPU_HIST"     domainObjectName="PsSysCpuHist"     modelType="flat"/>      
+		<table schema="pmsadm"  tableName="ABA_PS_SYS_DISK_HIST"	domainObjectName="PsSysDiskHist"     modelType="flat"/>      
+		<table schema="pmsadm"  tableName="ABA_PS_SYS_MEM_HIST"		domainObjectName="PsSysMemHist"     modelType="flat"/>      
+		<table schema="pmsadm"  tableName="ABA_PS_SYS_RESOURCE"		domainObjectName="PsSysResource"     modelType="flat"/>      
+		<table schema="pmsadm"  tableName="ABA_PS_SYS_PROCESS"		domainObjectName="PsSysProcess"     modelType="flat"/>      
+		<!--  <table schema="pmsadm"  tableName="ABA_PS_SYS_PROCESS_HIST"	domainObjectName="SysProcessHist"     modelType="flat"/>-->      
+		<table schema="pmsadm"  tableName="ABA_PS_CS_MESSAGE"		domainObjectName="PsCsMessage"     modelType="flat"/>      
+		<table schema="pmsadm"  tableName="ABA_PS_NE_MSG_VIEW"		domainObjectName="PsNeMsgView"     modelType="flat"/>      
+		<table schema="pmsadm"  tableName="ABA_PS_NE_MESSAGE"       domainObjectName="PsNeMessage"     modelType="flat"/>      
+		<!--  <table schema="pmsadm"  tableName="ABA_PS_PROV_SYSTEM_INFO" domainObjectName="ProvSystemInfo"     modelType="flat"/>-->      
+		<table schema="pmsadm"  tableName="ABA_PS_PROV_NE_INFO"     domainObjectName="PsProvNeInfo"     modelType="flat"/>      
+		<table schema="pmsadm"  tableName="ABA_PS_UI_ALARM_CONF"    domainObjectName="PsUiAlarmConf"     modelType="hierarchical"/>      
+		<table schema="pmsadm"  tableName="ABA_PS_PROV_FTR"         domainObjectName="PsProvFtr"     modelType="flat"/>      
+		<table schema="pmsadm"  tableName="ABA_PS_PROD"             domainObjectName="PsProd"     modelType="flat"/>      
+    	<table schema="pmsadm"  tableName="ABA_PS_PROV_CMD"         domainObjectName="PsProvCmd"     modelType="flat"/>      
+		<table schema="pmsadm"  tableName="ABA_PS_PROV_PARAM_INFO"  domainObjectName="PsProvParamInfo"     modelType="flat"/>      
+		<table schema="pmsadm"  tableName="ABA_PS_PROV_PARAM_SEQ"   domainObjectName="PsProvParamSeq"     modelType="flat"/>      
+		<table schema="pmsadm"  tableName="ABA_PS_PROV_ENUM"        domainObjectName="PsProvEnum"     modelType="flat"/>      
+		<table schema="pmsadm"  tableName="ABA_PS_PROV_MAP"         domainObjectName="PsProvMap"     modelType="flat"/>      
+		<table schema="pmsadm"  tableName="ABA_PS_PARAM_MAP"        domainObjectName="PsParamMap"     modelType="flat"/>      
+	
+	</context>
+
+</generatorConfiguration>

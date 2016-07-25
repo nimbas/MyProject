@@ -1,0 +1,452 @@
+<%@ taglib prefix="s" uri="http://www.springframework.org/tags"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<%@ taglib prefix="code" uri="http://www.acube.com/jsp/tags/core" %>
+<%@ taglib prefix="customTag" tagdir="/WEB-INF/tags" %>
+
+<%@ page pageEncoding="UTF-8" contentType="text/html; charset=UTF-8"%>
+<style>
+	/*
+	 * Glyphicons
+	 *
+	 * Special styles for displaying the icons and their classes in the docs.
+	 */
+
+	.bs-glyphicons {
+		padding-left: 0;
+		padding-bottom: 1px;
+		margin-bottom: 1px;
+		list-style: none;
+	}
+	.bs-glyphicons li {
+		float: center;
+		width: 50px;
+		height: 50px;
+		padding: 2px;
+		margin: 0 -1px 0px -1px;
+		font-size: 12px;
+		line-height: 1.4;
+		text-align: center;
+		border: 1px solid #ddd;
+	}
+	.bs-glyphicons .glyphicon {
+		margin-top: 5px;
+		margin-bottom: 10px;
+		font-size: 24px;
+	}
+	.bs-glyphicons .glyphicon-class {
+		display: block;
+		text-align: center;
+	}
+	.bs-glyphicons li:hover {
+		background-color: rgba(86,61,124,.2);
+		cursor:pointer;
+	}
+
+</style>
+<%-- <div class="row">
+	<div class="col-xs-12 col-sm-7 col-md-7 col-lg-4">
+		<h1 class="page-title txt-color-blueDark">
+			<i class="fa fa-pencil-square-o fa-fw "></i> 
+				OP. Table
+			<span>> Prov. Request</span>
+		</h1>
+	</div>
+</div> --%>
+
+<!-- widget grid -->
+<section id="widget-grid" class="">
+	<div class="row">
+		
+		<article class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+			<div>
+				<table id="productListGrid"></table>
+				<div id="pagerOfproductListGrid"></div>
+				<br>
+				<div class="row">
+					<!-- NEW WIDGET START -->
+					<article class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+						<table id="selectableFeaturesGrid"></table>
+						<div id="pagerOfselectableFeaturesGrid"></div>
+					</article>
+					<article class="col-xs-1 col-sm-1 col-md-1 col-lg-1">
+						<div class="row">
+							<div class="widget-body col-xs-12 col-sm-12 col-md-12 col-lg-12">
+								<ul class="bs-glyphicons" >
+									<li id="appendFeatureBtn">
+									<span class="glyphicon glyphicon-chevron-right"></span>
+									</li>
+								</ul>
+							</div>
+							<div class="widget-body col-xs-12 col-sm-12 col-md-12 col-lg-12">
+								<ul class="bs-glyphicons">
+									<li id="removeFeatureBtn">
+									<span class="glyphicon glyphicon-chevron-left"></span>
+									</li>
+								</ul>
+							</div>
+						</div>
+					</article>
+					<article class="col-xs-5 col-sm-5 col-md-5 col-lg-5">
+						<table id="selectedFeaturesGrid"></table>
+						<div id="pagerOfselectedFeaturesGrid"></div>
+					</article>
+					<article class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+						<div class="form-actions">
+							<div class="row">
+								<div class="col-md-12">
+									<customTag:button label="Upload" id="uploadBtn" css="success" size="xs" userDefine="method='POST'"/>
+									<customTag:button label="Save" id="saveFeatureBtn" css="success" size="xs"/>
+								</div>
+							</div>	
+						</div>
+					</article>
+				</div>
+			</div>
+		</article>
+		<!-- WIDGET END -->
+
+	</div>
+	<!-- end row -->		
+</section>
+<!-- end widget grid -->
+
+<script type="text/javascript">
+var pagedestroy = function(){
+	//alert('page destroy!');
+	console.log('product list page destroy');
+	$("body").removeData('deleteGridData') ;
+}
+var refreshGridList = function(){
+	jQuery("#selectedFeaturesGrid").reloadGrid();
+}
+$(function(e) {
+	
+	pageSetUp(); //Default Call function
+	pagefunction();
+	
+	CODE.sync('SvcDomain', 'SourceTargetInd');
+	
+	function pagefunction() {
+		
+		run_jqgrid_function();
+		
+		function run_jqgrid_function() {
+
+			jQuery("#productListGrid").jqGrid({
+				url : '<s:url value="/product/search"/>', 
+			    mtype: 'POST',//get으로 하면 한글이 깨져서 조회가 안됨.
+			    //postData : {'filterMaps': JSON.stringify({'page' : 1, 'dateType': '1', 'reqDt': '<fmt:formatDate pattern="yyyyMMdd" value="${curDate}" />'})},
+				datatype : 'json',
+				height : '330px',
+				colNames : [  "Product Code"	
+				            , "Product Name"				
+				            , "Service Domain"			
+				            , "Service Domain"			
+				            , "Product Type"			
+				            , "Status"			
+				            , "Effective Date"			
+				            , "Expiration Date"			
+				            , "Rate Type"			
+				            , "Price"				
+				            , "Duration"
+				            , "Free VOD Count"  		
+				            , "Attribute Y/N"  			
+				            , "Category"  				
+				            , "Related to STB_YN"  			
+				            , "Changed Date"  	
+				            , "Operator ID"  	],
+				colModel : [
+					{ name : 'prodCd', 		 index : 'prod_cd',			width : 120 }, 
+					{ name : 'prodName', 	 index : 'prod_name',		width : 140}, 
+					{ name : 'svcDomain', 	 index : 'svc_domain',		hidden : true}, 
+					{ name : 'svcDomainName',index : 'svc_domain',		width : 100,	align : 'center', search: false}, 
+					{ name : 'prodType', 	 index : 'prod_type',		width : 90,		align : 'center'}, 
+					{ name : 'prodStatus', 	 index : 'prod_status',		width : 80,		align : 'center'}, 
+					{ name : 'prodSdate', 	 index : 'prod_sdate',		width : 100,	align : 'center', formatter:formatters['date'], search: false}, 
+					{ name : 'prodEdate', 	 index : 'prod_edate',		width : 100,	align : 'center', formatter:formatters['date'], search: false}, 
+					{ name : 'rateType', 	 index : 'rate_type',		width : 80,		align : 'center'},
+					{ name : 'prodPrice',  	 index : 'prod_price',		width : 80,		align : 'center'},
+					{ name : 'duration',  	 index : 'duration',		width : 80,		align : 'center'},
+					{ name : 'freevodCount', index : 'freevod_count',	width : 110,	align : 'center'},
+					{ name : 'attributeYn',  index : 'attribute_yn',	width : 110,	align : 'center'},
+					{ name : 'prodCategory', index : 'prod_category',	width : 80,		align : 'center'},
+					{ name : 'related2stbYn',index : 'related2stb_yn', 	width : 110,	align : 'center'},
+					{ name : 'sysUpdateDate',index : 'sys_update_date', width : 110,	align : 'center', formatter:formatters['dateTime'], search: false},
+					{ name : 'operatorId',   index : 'operator_id', 	width : 80,		align : 'center'},
+				],
+				rowNum : 10, //-1 : all data
+				rowList : [10, 20, 50, 100], // 한번에 보기 갯수 목록 
+				pager : '#pagerOfproductListGrid',
+				sortname : 'prod_cd',
+				sortorder : "asc", 
+				caption : "Product List",
+				toolbarfilter: true,
+				viewrecords : true,				
+				multiselect : false,
+				autowidth : true,				
+				//width : 'auto',//$("#content").width(),
+			   	shrinkToFit: false,
+			   	hidegrid: true,
+			   	beforeProcessing : function(data, status, xhr){
+					var rows = data.rows ;
+					for(var i=0;i<rows.length;i++){
+						rows[i].svcDomainName = CODE.name('SvcDomain', rows[i].svcDomain); 
+					}
+				},
+			   	onSelectRow: function(ids) {
+			   		var productInfo = $("#productListGrid").getGridDataByRowId(ids);
+			   		var prodCd = productInfo.prodCd ; 
+			   		
+			   		var filterMap = {'prodCd': prodCd};
+					var postData = {'filterMaps': JSON.stringify(filterMap)}; 
+					/* jQuery("#selectableFeaturesGrid").jqGrid('setGridParam', {url:'<s:url value="/feature/0/except"/>'});
+					jQuery("#selectableFeaturesGrid").trigger('reloadGrid'); */
+					
+					jQuery("#selectedFeaturesGrid").jqGrid('setGridParam',{url:'<s:url value="/feature/'+prodCd+'/chosen"/>', postData : postData});
+					jQuery("#selectedFeaturesGrid").trigger('reloadGrid');
+					
+					$("body").data('deleteGridData', null) ;
+				}			
+			});
+				
+			jQuery("#productListGrid").jqGrid('filterToolbar',{stringResult: true, searchOperators : true, defaultSearch: 'cn'});
+			
+			jQuery("#productListGrid").jqGrid('navGrid', "#pagerOfproductListGrid"
+				,{edit:false,add:false,del:false} // Setting for buttons
+				,{} // default settings for edit
+				,{} // default settings for add
+				,{} // default settings for delete 
+				,{closeOnEscape : true, multipleSearch : true, closeAfterSearch : true } //setting for search option
+				,{} // default settings for view 
+			);
+			
+			jQuery("#selectableFeaturesGrid").jqGrid({
+				url : '<s:url value="/feature/0/except"/>',
+			    mtype: 'POST',
+				datatype : 'json',
+				height : '330px',//10개:330px, 15개 : 490px 
+				colNames : [ "Feature Code"	
+				            , "Feature Description"		
+				            , "svcDomain"		
+				            , "Service Domain"		
+				            , "NE ID"		
+				            , "Target/Source"		
+				            , "Target/Source"		
+				            , "Creation Date"	 
+				            , "Changed Date"	 
+				            , "Operator ID"			
+				            ],
+				colModel : [
+					{ name : 'ftrCd', 			index : 'ftr_cd',			align : 'center',	width : 110}, 
+					{ name : 'descr', 			index : 'descr',			align : 'left' ,	width : 120}, 
+					{ name : 'svcDomain', 		index : 'svc_domain',	 	hidden: true}, 
+					{ name : 'svcDomainName', 	index : 'svc_domain',	 	align : 'center',	width : 100, search : false}, 
+					{ name : 'neId', 			index : 'ne_id', 			align : 'center',	width : 60}, 
+					{ name : 'srcTrgtInd', 		index : 'src_trgt_ind', 	hidden: true}, 
+					{ name : 'srcTrgtName', 	index : 'src_trgt_ind', 	align : 'center',   width : 80}, 
+					{ name : 'sysCreationDate', index : 'sys_creation_date',align : 'center',   width : 110, formatter:formatters["dateTime"], search : false}, 
+					{ name : 'sysUpdateDate', 	index : 'sys_update_date',  align : 'center',   width : 110, formatter:formatters["dateTime"], search : false}, 
+					{ name : 'operatorId', 		index : 'operator_id', 		align : 'center',	width : 100 }
+					],
+				rowNum : 10, //-1 : all data
+				rowList : [10, 20, 50, 100],
+				pager : '#pagerOfselectableFeaturesGrid',
+				sortname : 'ftr_cd',
+				sortorder : "asc",
+				caption : "Selectable Feature List",
+				toolbarfilter: true,
+				viewrecords : true,				
+				multiselect : true,
+				autowidth : false,
+			   	shrinkToFit: false,
+			   	hidegrid: true,
+				beforeProcessing : function(data, status, xhr){//필요시 데이타 변경 
+				},
+				gridComplete : function(data){
+					/* var ids = jQuery("#selectableFeaturesGrid").jqGrid('getDataIDs');
+					if(ids != null){
+						jQuery("#selectableFeaturesGrid").jqGrid('setSelection', 1);
+					} */
+				}
+			});
+			
+			jQuery("#selectableFeaturesGrid").jqGrid('filterToolbar',{stringResult: true, searchOperators : true, defaultSearch: 'cn'});
+			
+			jQuery("#selectedFeaturesGrid").jqGrid({
+				url : '<s:url value="/feature/0/chosen"/>',
+			    mtype: 'POST',
+				datatype : 'json',
+				//postData : {page : 1},
+				height : '395px', //10개:330px, 15개 : 490px 
+				colNames : [ "Feature Code"	
+				            , "Feature Description"		
+				            , "svcDomain"		
+				            , "Service Domain"		
+				            , "NE ID"		
+				            , "Target/Source"		
+				            , "Target/Source"		
+				            , "Creation Date"	 
+				            , "Changed Date"	 
+				            , "Operator ID"			
+				            , "workType"			
+				            ],
+				colModel : [
+					{ name : 'ftrCd', 			index : 'ftr_cd',			align : 'center',	width : 110}, 
+					{ name : 'descr', 			index : 'descr',			align : 'left' ,	width : 120}, 
+					{ name : 'svcDomain', 		index : 'svc_domain',	 	hidden: true}, 
+					{ name : 'svcDomainName', 	index : 'svc_domain',	 	align : 'center',	width : 100}, 
+					{ name : 'neId', 			index : 'ne_id', 			align : 'center',	width : 60}, 
+					{ name : 'srcTrgtInd', 		index : 'src_trgt_ind', 	hidden: true}, 
+					{ name : 'srcTrgtName', 	index : 'src_trgt_ind', 	align : 'center',   width : 80}, 
+					{ name : 'sysCreationDate', index : 'sys_creation_date',align : 'center',   width : 110, formatter:formatters["dateTime"]}, 
+					{ name : 'sysUpdateDate', 	index : 'sys_update_date',  align : 'center',   width : 110, formatter:formatters["dateTime"]}, 
+					{ name : 'operatorId', 		index : 'operator_id', 		align : 'center',	width : 100 },
+					{ name : 'workType', 		index : 'workType', 		hidden: true}, 
+					],
+				rowNum : -1, //-1 : all data
+				//rowList : [10, 20, 50, 100],
+				//pager : '#pagerOfselectedFeaturesGrid',
+				sortname : 'ftr_cd',
+				sortorder : "asc",
+				caption : "Selected Feature List",
+				toolbarfilter: true,
+				viewrecords : true,				
+				multiselect : true,
+				autowidth : true,
+			   	shrinkToFit: false, 
+			   	hidegrid: true,
+				beforeProcessing : function(data, status, xhr){//필요시 데이타 변경 
+				},
+				gridComplete : function(data){
+					/* var ids = jQuery("#selectableFeaturesGrid").jqGrid('getDataIDs');
+					if(ids != null){
+						jQuery("#selectableFeaturesGrid").jqGrid('setSelection', 1);
+					} */
+				}
+			});
+			
+			// Add tooltips
+			$('.navtable .ui-pg-button').tooltip({
+				container : 'body'
+			});
+		  
+			//브라우져 사이즈 조정시 마다 그리드 사이즈 조정		    
+		    $(window).on('resize.jqGrid', function () {
+				jQuery("#productListGrid").resizeGridWidth();
+				jQuery("#selectableFeaturesGrid").resizeGridWidth();
+				jQuery("#selectedFeaturesGrid").resizeGridWidth();
+			});
+		} // end of jqgrid function
+		
+		$("#appendFeatureBtn").click(function(e){
+			e.preventDefault();
+			var product = $("#productListGrid").selGridData();
+			if(product == null){
+				MessageBox.alert("Select product list!");
+				return ;
+			}
+			var message = $("#selectableFeaturesGrid").selGridData(false);
+			
+			if(message != null){
+				var exist = $("#selectedFeaturesGrid").compareGridData('ftrCd', message);
+				if(!exist){
+					$.each(message, function(idx, obj){
+						obj['workType'] = 'CREATE';
+					});
+					$("#selectedFeaturesGrid").addGridData(message);	
+				}
+			}else{
+				MessageBox.alert("Select left feature list!");
+			}
+		});
+		
+		$("#removeFeatureBtn").click(function(e){
+			e.preventDefault();
+			var message = $("#selectedFeaturesGrid").selGridData();
+			if(message != null){
+				$.each(message, function(idx, obj){
+					if(obj['workType'] == 'CREATE'){ //none/update ==> DELETE , create : x 
+						delete obj ;
+					}else{
+						obj['workType'] = 'DELETE';
+					}
+				});
+				$("body").setArrayData('deleteGridData', message) ;
+				$("#selectedFeaturesGrid").deleteGridData();
+			}else{
+				MessageBox.alert("Select right feature list!");
+			}
+		});
+		
+		$("#saveFeatureBtn").click(function(e){
+			e.preventDefault();
+			var product = $("#productListGrid").selGridData();
+			if(product == null){
+				MessageBox.alert("Select product list!");
+				return ;
+			}
+			var newFeatures = new Array();
+			
+			//삭제된 데이타 추가
+			var deleteGridData = $("body").data('deleteGridData') ;
+			if(deleteGridData != null){
+				for(var i=0; i<deleteGridData.length;i++){
+					delete deleteGridData[i].svcDomainName; 
+					delete deleteGridData[i].srcTrgtName; 
+					delete deleteGridData[i].sysCreationDate; 
+					delete deleteGridData[i].sysUpdateDate; 
+					newFeatures.push(deleteGridData[i]);
+				}
+			}
+			
+			// 그리드 잔여 feature추가 
+			var features = $("#selectedFeaturesGrid").allGridData();
+			if(features != null)
+			for(var i=0; i<features.length;i++){
+				delete features[i].svcDomainName; 
+				delete features[i].srcTrgtName; 
+				delete features[i].sysCreationDate; 
+				delete features[i].sysUpdateDate; 
+				newFeatures.push(features[i]);
+			}
+			
+			var product = {prodCd : product.prodCd , features : newFeatures} ;
+			console.log("sending data === "+JSON.stringify(product));
+			$("#content").processing();
+			$.ajax({
+				type : 'POST',
+				async : true,
+				url : '<s:url value="/product/"/>' + product.prodCd, 
+				contentType: "application/json",
+				dataType : 'json',
+				data : JSON.stringify(product),
+				success : function(data) { 
+					if(data.resultCode == 'SUCCESS'){
+						MessageBox.alert('Saved!');
+					}else{
+						MessageBox.error(data.resultMsg);
+					}
+				},	error:function(data){
+					MessageBox.error(data, "<s:message code="err.500"/>");
+				}, complete:function(jqXHR, textStatus){
+					$("#content").complete();
+				}
+			});	
+		});
+		
+		$("#uploadBtn").click(function(e){
+			e.preventDefault();
+			Dialog.open({
+				div : '#excelUploadDialog', 
+				url : '<s:url value="/excelUpload/prodFeature"/>?callBack=refreshGridList', 
+				title :'Excel Upload', 
+				width : 800, 
+				height : 615
+			}); 
+		});
+		
+	}// end pageFunction
+	
+});	
+</script>

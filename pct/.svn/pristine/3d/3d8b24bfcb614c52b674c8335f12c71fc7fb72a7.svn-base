@@ -1,0 +1,48 @@
+package com.acube.pvs.web;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.acube.common.exception.AcubeException;
+import com.acube.pvs.domain.Entrance;
+import com.acube.pvs.service.CustomerService;
+
+
+@Controller
+public class CustomerController {
+	
+	private static Logger logger = LoggerFactory.getLogger(CustomerController.class);
+	@Autowired private CustomerService customerService ;
+	
+	//2013.03.20 ì¶”ê? grade ? •ë³? ê°?? ¸?˜¤ê¸?
+	@SuppressWarnings("null")
+	@RequestMapping(value="/cs/getCustomerGradeFromCust", method = RequestMethod.POST)
+	@ResponseBody public Entrance getCustomerGradeFromCust(Entrance entrance , Model model){
+		Entrance result = null;
+		try {
+			
+			if( entrance != null){
+				result = customerService.getCustomerGradeFromCust(entrance);
+				if(result == null){
+					result = new Entrance();
+				}
+			}
+			
+		} catch (AcubeException me) {
+			logger.error("[getCustomerGradeFromCust] " + me.toString(), me);
+		} catch (Exception e) {
+			logger.error("[csCccs010getCustomerGradeFromCustActivity] " + e.toString(), e);
+		} finally{
+			if (logger.isDebugEnabled()) {
+				logger.debug("[getCustomerGradeFromCust] END");
+			}
+		}
+		return result;
+	 }
+}

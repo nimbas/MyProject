@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.acube.security.mapper.UserRepository">
+
+	<sql id="CommonSearchFilterQueryGeneration">
+		<if test="filterCount > 0">
+		 	AND (
+		 	<choose>
+		 	<when test="filterOper != null and filterOper.groupOp eq 'OR'">
+		 		<foreach collection="searchFilters" separator="OR" item="filter" index="index">
+					<choose><when test='filter.type eq "=" or filter.type eq "!=" or filter.type eq "IN" or filter.type eq "NOT IN"'>${filter.name}</when><otherwise>UPPER(${filter.name})</otherwise></choose> ${filter.type} <choose><when test='filter.type eq "=" or filter.type eq "!="'>#{filter.value}</when><otherwise>${filter.value}</otherwise></choose> 
+				</foreach>
+		 	</when>
+		 	<otherwise>
+		 		<foreach collection="searchFilters" separator="AND" item="filter" index="index">
+					<choose><when test='filter.type eq "=" or filter.type eq "!=" or filter.type eq "IN" or filter.type eq "NOT IN"'>${filter.name}</when><otherwise>UPPER(${filter.name})</otherwise></choose> ${filter.type} <choose><when test='filter.type eq "=" or filter.type eq "!="'>#{filter.value}</when><otherwise>${filter.value}</otherwise></choose> 
+				</foreach>
+		 	</otherwise>
+		 	</choose>
+		 	)
+		</if>
+	</sql>
+	
+	<resultMap id="UserResultMap" type="AsUser">
+		<id column="MARKET_CODE" property="marketCode" jdbcType="VARCHAR" />
+		<id column="USER_ID" property="userId" jdbcType="VARCHAR" />
+		<result column="SYS_CREATE_DATE" property="sysCreationDate" jdbcType="TIMESTAMP" />
+		<result column="SYS_UPDATE_DATE" property="sysUpdateDate" jdbcType="TIMESTAMP" />
+		<result column="OPERATOR_ID" property="operatorId" jdbcType="VARCHAR" />
+		<result column="APPLICATION_ID" property="applicationId" jdbcType="VARCHAR" />
+		<result column="DL_SERVICE_CODE" property="dlServiceCode" jdbcType="VARCHAR" />
+		<result column="DL_UPDATE_STAMP" property="dlUpdateStamp" jdbcType="DECIMAL" />
+		<result column="DLR_CD" property="dlrCd" jdbcType="VARCHAR" />
+		<result column="DLR_NAME" property="dlrName" jdbcType="VARCHAR" />
+		<result column="USER_NAME" property="userName" jdbcType="VARCHAR" />
+		<result column="PASSWORD" property="password" jdbcType="VARCHAR" />
+		<result column="OLD_PASSWORD" property="oldPassword" jdbcType="VARCHAR" />
+		<result column="MAX_ADJUST_AMT" property="maxAdjustAmt" jdbcType="DECIMAL" />
+		<result column="EFFECTIVE_DATE8" property="effectiveDate8" jdbcType="VARCHAR" />
+		<result column="EXPIRATION_DATE8" property="expirationDate8" jdbcType="VARCHAR" />
+		<result column="EMAIL_ADDRESS" property="emailAddress" jdbcType="VARCHAR" />
+		<result column="BIRTHDAY" property="birthday" jdbcType="VARCHAR" />
+		<result column="AGE" property="age" jdbcType="DECIMAL" />
+		<result column="USER_LEVEL" property="userLevel" jdbcType="VARCHAR" />
+		<result column="GENDER" property="gender" jdbcType="VARCHAR" />
+		<result column="ZIP_CODE" property="zipCode" jdbcType="VARCHAR" />
+		<result column="USER_MERRY_YN" property="userMerryYn" jdbcType="VARCHAR" />
+		<result column="HOME_TELNO" property="homeTelno" jdbcType="VARCHAR" />
+		<result column="WORK_TELNO" property="workTelno" jdbcType="VARCHAR" />
+		<result column="MOBILE_TELNO" property="mobileTelno" jdbcType="VARCHAR" />
+		<result column="WORK_DATE" property="workDate" jdbcType="TIMESTAMP" />
+		<result column="USER_STATUS" property="userStatus" jdbcType="VARCHAR" />
+		<result column="SALE_FLAG" property="saleFlag" jdbcType="VARCHAR" />
+		<result column="CONST_FLAG" property="constFlag" jdbcType="VARCHAR" />
+		<result column="INSTALL_FLAG" property="installFlag" jdbcType="VARCHAR" />
+		<result column="AS_FLAG" property="asFlag" jdbcType="VARCHAR" />
+		<result column="REMOVE_FLAG" property="removeFlag" jdbcType="VARCHAR" />
+		<result column="VILG_ABV_ADDR" property="vilgAbvAddr" jdbcType="VARCHAR" />
+		<result column="VILG_BLW_ADDR" property="vilgBlwAddr" jdbcType="VARCHAR" />
+		<result column="IP_ADDRESS" property="ipAddress" jdbcType="VARCHAR" />
+		<result column="IP_SCAN_YN" property="ipScanYn" jdbcType="VARCHAR" />
+		<result column="DESCRIPTION" property="description" jdbcType="VARCHAR" />
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+		<result column="USER_NAME2" property="userName2" jdbcType="VARCHAR" />
+		<result column="USERGROUP" property="usergroup" jdbcType="VARCHAR" />
+		<result column="LOGIN_ID" property="loginId" jdbcType="VARCHAR" />
+		<result column="ENCODED_PASSWORD" property="encodedPassword" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<sql id="User_Column_List">
+		MARKET_CODE, USER_ID, SYS_CREATE_DATE, SYS_UPDATE_DATE,
+		OPERATOR_ID,
+		APPLICATION_ID,
+		DL_SERVICE_CODE, DL_UPDATE_STAMP, DLR_CD,
+		(SELECT dlr_nm FROM aba_rv_dlr_mstr WHERE dlr_cd = aba_or_user.dlr_cd) DLR_NAME,
+		USER_NAME, PASSWORD, OLD_PASSWORD,
+		MAX_ADJUST_AMT,
+		EFFECTIVE_DATE8,
+		EXPIRATION_DATE8, EMAIL_ADDRESS, BIRTHDAY, AGE, USER_LEVEL, GENDER,
+		ZIP_CODE, USER_MERRY_YN, HOME_TELNO, WORK_TELNO, MOBILE_TELNO,
+		WORK_DATE, USER_STATUS,
+		SALE_FLAG, CONST_FLAG,
+		INSTALL_FLAG, AS_FLAG,
+		REMOVE_FLAG, VILG_ABV_ADDR,
+		VILG_BLW_ADDR,
+		IP_ADDRESS, IP_SCAN_YN,
+		DESCRIPTION, STATUS, USER_NAME2, USERGROUP, LOGIN_ID,
+		ENCODED_PASSWORD
+	</sql>
+
+	<select id="getUserByUserId" resultMap="UserResultMap">
+		SELECT
+		<include refid="User_Column_List" />
+		FROM aba_or_user
+		WHERE user_id = #{userId}
+	</select>
+	
+	<select id="getUserByLoginId" parameterType="AsUser" resultMap="UserResultMap">
+		SELECT
+		<include refid="User_Column_List" />
+		FROM aba_or_user
+		WHERE market_code= #{marketCode}
+		AND login_id = #{loginId}
+	</select>
+
+	<select id="getProfileIdByUserId" resultType="String">
+		SELECT c.profile_id
+		FROM aba_or_user a, ABA_SE_GROUP_USER_LINK b, ABA_SE_GROUP_PROFILE_LINK c
+		WHERE a.USER_ID = b.USER_ID
+		AND b.GROUP_SEQ = c.GROUP_SEQ
+		AND a.user_id =#{userId,jdbcType=VARCHAR}
+	</select>
+
+	<select id="getElementsListByUserId" parameterType="hashmap" resultType="AsElements">
+	
+		SELECT DISTINCT 
+		    SECURITY_NO AS ID, SECURITY_NO AS SECURITYNO, RECORD_TYPE AS RECORDTYPE, 
+		    MENU_TYPE AS MENUTYPE, MENU_ID AS MENUID, TOP_MENU_ID AS TOPMENUID, 
+		    TOP_MENU_ID AS PARENT, MENU_ORD AS MENUORD, WINDOW_ID AS WINDOWID, 
+		    WINDOW_DESC AS WINDOWDESC, NOT_COMMAND_ID AS NOTCOMMANDID, 
+		    DESCRIPTION AS DESCRIPTION, 
+		    NVL(
+		    (SELECT MEANING
+		     FROM ABA_CO_FND_LOOKUP_VALUES
+		     WHERE
+		         CCODE_GROUP = 'MenuNameCd'AND
+		         CCODE = DESCRIPTION_MSG 
+		         <if test="lang == null  or lang eq ''"> AND LANGUAGE = 'en' </if>
+				 <if test="lang != null  and lang != ''"> AND LANGUAGE = #{lang} </if>
+		         ), DESCRIPTION) AS DESCRIPTIONMSG, 
+		    (LEVEL-1)||'' AS MENULEVEL, ACCESS_URL AS accessUrl, ICON_CLASS AS iconClass
+		FROM 
+		    (SELECT DISTINCT E.*
+		     FROM 
+		         ABA_OR_USER A, ABA_SE_GROUP_USER_LINK B, ABA_SE_GROUP_PROFILE_LINK C, 
+		         ABA_SE_AUTH_PROFILE_LINK D, ABA_CO_SECURITY_ELEMENTS E
+		     WHERE
+		         A.USER_ID = #{userId} AND
+		         A.USER_ID = B.USER_ID AND
+		         B.GROUP_SEQ = C.GROUP_SEQ AND
+		         C.PROFILE_ID = D.PROFILE_ID AND
+		         D.AUTH_ID = TO_CHAR(E.SECURITY_NO) AND
+		         TO_CHAR(SYSDATE, 'YYYYMMDD') BETWEEN EFFECTIVE_DATE8 AND
+		         EXPIRATION_DATE8) X
+		WHERE
+		    X.RECORD_TYPE = #{recordType} 
+		START WITH
+		    X.TOP_MENU_ID IS NULL 
+		<if test='securityNo != null  and securityNo != ""'>AND SECURITY_NO = #{securityNo}</if>
+		CONNECT BY
+		    PRIOR X.SECURITY_NO = X.TOP_MENU_ID 
+		ORDER SIBLINGS BY MENU_ORD
+	</select>
+
+	<insert id="addUser" parameterType="AsUser">
+		INSERT INTO ABA_OR_USER (
+		        MARKET_CODE
+		        ,USER_ID
+		        ,LOGIN_ID
+		        ,SYS_CREATE_DATE
+		        ,SYS_UPDATE_DATE
+		        ,OPERATOR_ID
+		        ,APPLICATION_ID
+		        ,DL_SERVICE_CODE
+		        ,DL_UPDATE_STAMP
+		        ,DLR_CD
+		        ,USER_NAME
+		        ,USER_NAME2
+		        ,USERGROUP
+		        ,PASSWORD
+		        ,OLD_PASSWORD
+		        <!--,MAX_ADJUST_AMT-->
+		        ,EFFECTIVE_DATE8
+		        ,EXPIRATION_DATE8
+		        ,EMAIL_ADDRESS
+		        ,BIRTHDAY
+		        ,AGE
+		        ,USER_LEVEL
+		        ,GENDER
+		        ,ZIP_CODE
+		        ,USER_MERRY_YN
+		        ,HOME_TELNO
+		        ,WORK_TELNO
+		        ,MOBILE_TELNO
+		        ,WORK_DATE
+		        ,USER_STATUS
+		        ,SALE_FLAG
+		        ,CONST_FLAG
+		        ,INSTALL_FLAG
+		        ,AS_FLAG
+		        ,REMOVE_FLAG
+		        ,VILG_ABV_ADDR
+		        ,VILG_BLW_ADDR
+		        ,IP_ADDRESS
+		        ,IP_SCAN_YN
+		        ,DESCRIPTION
+		        ,STATUS ) 
+		  VALUES (
+		         (SELECT mrkt_cd FROM aba_rv_dlr_mstr WHERE dlr_cd = #{dlrCd})
+		        ,#{loginId} 
+		        ,#{loginId} 
+		        ,SYSDATE
+		        ,SYSDATE
+		        ,#{operatorId        ,jdbcType=VARCHAR}
+		        ,#{applicationId     ,jdbcType=VARCHAR}
+		        ,#{dlServiceCode     ,jdbcType=VARCHAR}
+		        ,0
+		        ,#{dlrCd             ,jdbcType=VARCHAR}
+		        ,#{userName          ,jdbcType=VARCHAR}
+		        ,#{userName2         ,jdbcType=VARCHAR}
+		        ,#{usergroup         ,jdbcType=VARCHAR}
+		        ,#{password          ,jdbcType=VARCHAR}
+		        ,#{oldPassword       ,jdbcType=VARCHAR}
+		        ,#{effectiveDate8    ,jdbcType=VARCHAR}
+		        ,#{expirationDate8   ,jdbcType=VARCHAR}
+		        ,#{emailAddress      ,jdbcType=VARCHAR}
+		        ,#{birthday          ,jdbcType=VARCHAR}
+		        ,#{age               ,jdbcType=VARCHAR}
+		        ,#{userLevel         ,jdbcType=VARCHAR}
+		        ,#{gender            ,jdbcType=VARCHAR}
+		        ,#{zipCode           ,jdbcType=VARCHAR}
+		        ,#{userMerryYn       ,jdbcType=VARCHAR}
+		        ,#{homeTelno         ,jdbcType=VARCHAR}
+		        ,#{workTelno         ,jdbcType=VARCHAR}
+		        ,#{mobileTelno       ,jdbcType=VARCHAR}
+		        ,SYSDATE
+		        ,#{userStatus        ,jdbcType=VARCHAR}
+		        ,#{saleFlag          ,jdbcType=VARCHAR}
+		        ,#{constFlag         ,jdbcType=VARCHAR}
+		        ,#{installFlag       ,jdbcType=VARCHAR}
+		        ,#{asFlag            ,jdbcType=VARCHAR}
+		        ,#{removeFlag        ,jdbcType=VARCHAR}
+		        ,#{vilgAbvAddr       ,jdbcType=VARCHAR}
+		        ,#{vilgBlwAddr       ,jdbcType=VARCHAR}
+		        ,#{ipAddress         ,jdbcType=VARCHAR}
+		        ,#{ipScanYn          ,jdbcType=VARCHAR}
+		        ,#{description       ,jdbcType=VARCHAR}
+		        ,#{status       	 ,jdbcType=VARCHAR}
+			)
+	</insert>
+	
+	
+	<update id="updateUser" parameterType="AsUser" >
+		UPDATE  aba_or_user 
+		<set>
+	        MARKET_CODE = (SELECT mrkt_cd FROM aba_rv_dlr_mstr WHERE dlr_cd = #{dlrCd}),
+	      <if test="sysUpdateDate != null">
+	        SYS_UPDATE_DATE = #{sysUpdateDate,jdbcType=TIMESTAMP},
+	      </if>
+	      <if test="operatorId != null">
+	        OPERATOR_ID = #{operatorId,jdbcType=VARCHAR},
+	      </if>
+	      <if test="applicationId != null">
+	        APPLICATION_ID = #{applicationId,jdbcType=VARCHAR},
+	      </if>
+	        DL_SERVICE_CODE = 'updateUser',
+	      <if test="dlrCd != null">
+	        DLR_CD = #{dlrCd,jdbcType=VARCHAR},
+	      </if>
+	      <if test="userName != null">
+	        USER_NAME = #{userName,jdbcType=VARCHAR},
+	      </if>
+	      <if test="password != null">
+	        PASSWORD = #{password,jdbcType=VARCHAR},
+	      </if>
+	      <if test="oldPassword != null">
+	        OLD_PASSWORD = #{oldPassword,jdbcType=VARCHAR},
+	      </if>
+	      <if test="maxAdjustAmt != null">
+	        MAX_ADJUST_AMT = #{maxAdjustAmt,jdbcType=DECIMAL},
+	      </if>
+	      <if test="effectiveDate8 != null">
+	        EFFECTIVE_DATE8 = #{effectiveDate8,jdbcType=VARCHAR},
+	      </if>
+	      <if test="expirationDate8 != null">
+	        EXPIRATION_DATE8 = #{expirationDate8,jdbcType=VARCHAR},
+	      </if>
+	      <if test="emailAddress != null">
+	        EMAIL_ADDRESS = #{emailAddress,jdbcType=VARCHAR},
+	      </if>
+	      <if test="birthday != null">
+	        BIRTHDAY = #{birthday,jdbcType=VARCHAR},
+	      </if>
+	      <if test="age != null">
+	        AGE = #{age,jdbcType=DECIMAL},
+	      </if>
+	      <if test="userLevel != null">
+	        USER_LEVEL = #{userLevel,jdbcType=VARCHAR},
+	      </if>
+	      <if test="gender != null">
+	        GENDER = #{gender,jdbcType=VARCHAR},
+	      </if>
+	      <if test="zipCode != null">
+	        ZIP_CODE = #{zipCode,jdbcType=VARCHAR},
+	      </if>
+	      <if test="userMerryYn != null">
+	        USER_MERRY_YN = #{userMerryYn,jdbcType=VARCHAR},
+	      </if>
+	      <if test="homeTelno != null">
+	        HOME_TELNO = #{homeTelno,jdbcType=VARCHAR},
+	      </if>
+	      <if test="workTelno != null">
+	        WORK_TELNO = #{workTelno,jdbcType=VARCHAR},
+	      </if>
+	      <if test="mobileTelno != null">
+	        MOBILE_TELNO = #{mobileTelno,jdbcType=VARCHAR},
+	      </if>
+	      <if test="workDate != null">
+	        WORK_DATE = #{workDate,jdbcType=TIMESTAMP},
+	      </if>
+	      <if test="userStatus != null">
+	        USER_STATUS = #{userStatus,jdbcType=VARCHAR},
+	      </if>
+	      <if test="saleFlag != null">
+	        SALE_FLAG = #{saleFlag,jdbcType=VARCHAR},
+	      </if>
+	      <if test="constFlag != null">
+	        CONST_FLAG = #{constFlag,jdbcType=VARCHAR},
+	      </if>
+	      <if test="installFlag != null">
+	        INSTALL_FLAG = #{installFlag,jdbcType=VARCHAR},
+	      </if>
+	      <if test="asFlag != null">
+	        AS_FLAG = #{asFlag,jdbcType=VARCHAR},
+	      </if>
+	      <if test="removeFlag != null">
+	        REMOVE_FLAG = #{removeFlag,jdbcType=VARCHAR},
+	      </if>
+	      <if test="vilgAbvAddr != null">
+	        VILG_ABV_ADDR = #{vilgAbvAddr,jdbcType=VARCHAR},
+	      </if>
+	      <if test="vilgBlwAddr != null">
+	        VILG_BLW_ADDR = #{vilgBlwAddr,jdbcType=VARCHAR},
+	      </if>
+	      <if test="ipAddress != null">
+	        IP_ADDRESS = #{ipAddress,jdbcType=VARCHAR},
+	      </if>
+	      <if test="ipScanYn != null">
+	        IP_SCAN_YN = #{ipScanYn,jdbcType=VARCHAR},
+	      </if>
+	      <if test="description != null">
+	        DESCRIPTION = #{description,jdbcType=VARCHAR},
+	      </if>
+	      <if test="status != null">
+	        STATUS = #{status,jdbcType=VARCHAR},
+	      </if>
+	      <if test="userName2 != null">
+	        USER_NAME2 = #{userName2,jdbcType=VARCHAR},
+	      </if>
+	      <if test="usergroup != null">
+	        USERGROUP = #{usergroup,jdbcType=VARCHAR},
+	      </if>
+	      <if test="loginId != null">
+	        LOGIN_ID = #{loginId,jdbcType=VARCHAR},
+	      </if>
+	      <if test="encodedPassword != null">
+	        ENCODED_PASSWORD = #{encodedPassword,jdbcType=VARCHAR},
+	      </if>
+	    </set>
+		WHERE  USER_ID = #{userId} 
+	</update>
+	<delete id="deleteUser" parameterType="AsUser">
+		DELETE FROM ABA_OR_USER 
+		WHERE  user_id	= #{userId} 
+	</delete>
+	
+	<delete id="deleteUserByDealer" parameterType="AsDealerMaster">
+		DELETE FROM ABA_OR_USER 
+		WHERE  dlr_cd	= #{dlrCd} 
+	</delete>
+	
+	<update id="moveUser" parameterType="AsUser" >
+		UPDATE  aba_or_user 
+			SET dlr_cd = #{dlrCd}
+			, market_code = (SELECT mrkt_cd FROM aba_rv_dlr_mstr WHERE dlr_cd = #{dlrCd}) 
+			, SYS_UPDATE_DATE = #{sysUpdateDate,jdbcType=TIMESTAMP}
+	      	, OPERATOR_ID = #{operatorId,jdbcType=VARCHAR}
+	        , APPLICATION_ID = #{applicationId,jdbcType=VARCHAR}
+	        , DL_SERVICE_CODE = 'moveUser'
+		WHERE  USER_ID	= #{userId,jdbcType=VARCHAR} 
+		
+	</update>
+	
+	<update id="updatePassword" parameterType="AsUser" >
+		UPDATE  ABA_OR_USER 
+			SET PASSWORD = #{password,jdbcType=VARCHAR}
+			, SYS_UPDATE_DATE = #{sysUpdateDate,jdbcType=TIMESTAMP}
+	      	, OPERATOR_ID = #{operatorId,jdbcType=VARCHAR}
+	        , APPLICATION_ID = #{applicationId,jdbcType=VARCHAR} 
+	        , DL_SERVICE_CODE = 'updatePassword'
+		WHERE  USER_ID	= #{userId,jdbcType=VARCHAR} 
+	</update>
+	
+	<select id="getUsersByDealer" resultMap="UserResultMap">
+		SELECT
+		<include refid="User_Column_List" />
+		FROM aba_or_user
+		WHERE dlr_cd = #{dlrCd} 
+	</select>
+	<select id="getAvailableIp" parameterType="AsUser" resultType="AsUser">
+		SELECT ipadr ipAddress FROM aba_rv_dlr_ipadr WHERE dlr_cd = #{dlrCd} AND use_yn='Y' AND assgn_yn IS NULL OR assgn_yn = 'N' 
+	</select>
+	
+	<update id="usedIpAddress" parameterType="AsUser">
+		UPDATE aba_rv_dlr_ipadr
+		SET assgn_yn ='Y'
+			, SYS_UPDATE_DATE = #{sysUpdateDate,jdbcType=TIMESTAMP}
+	      	, OPERATOR_ID = #{operatorId,jdbcType=VARCHAR}
+	        , APPLICATION_ID = #{applicationId,jdbcType=VARCHAR} 
+	        , DL_SERVICE_CODE = 'usedIpAddress'
+		WHERE assgn_yn IS NULL
+		AND dlr_cd = #{dlrCd}
+		AND ipadr= #{ipAddress}
+	</update>
+	
+	<update id="updateAssignableIpAddress" parameterType="AsUser">
+		UPDATE aba_rv_dlr_ipadr
+		SET assgn_yn =''
+			, SYS_UPDATE_DATE = #{sysUpdateDate,jdbcType=TIMESTAMP}
+	      	, OPERATOR_ID = #{operatorId,jdbcType=VARCHAR}
+	        , APPLICATION_ID = #{applicationId,jdbcType=VARCHAR} 
+	        , DL_SERVICE_CODE = 'updateAssignableIpAddress'
+		WHERE assgn_yn = 'Y'
+		AND (dlr_cd, ipadr) = (SELECT dlr_cd, ip_address FROM aba_or_user WHERE user_id = #{userId})
+	</update>
+	<select id="getCheckLoginID" parameterType="AsUser" resultType="int">
+		SELECT COUNT(1) cnt
+		FROM ABA_OR_USER
+		WHERE USER_ID =   #{userId}
+	</select>
+</mapper>

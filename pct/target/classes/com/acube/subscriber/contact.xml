@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="com.acube.sub.repository.ContactRepository">
+	<sql id="contactColumn">
+		  cntct_pnt_seqno      contactSeq     
+		, cust_no              custNo
+		, cntct_pnt_type_cd    contactTypeCode 
+		, telno_dv_cd          telDivCode      
+		, relation_type        relationDivCode      
+		, rels_person_name     relsPersonName      
+		, cntct_info1 		   cntctInfo1 
+		, cntct_info2 		   cntctInfo2 
+		, cntct_info3 		   cntctInfo3 
+		, cntct_full_nm        cntctFullNm  	
+		, cust_bas_ctplc_yn    baseContact     
+	</sql>
+	
+	<insert id="addContact" parameterType="AsContact">
+		<selectKey keyProperty="contactSeq" order="BEFORE" resultType="string">
+		SELECT SQ_ABA_CS_HB_CUST_CTPLC.NEXTVAL contactSeq FROM DUAL
+		</selectKey>
+		INSERT INTO aba_cs_hb_cust_ctplc (
+			  cntct_pnt_seqno  
+			, cust_no          
+			, cntct_pnt_type_cd
+			, telno_dv_cd 
+			, relation_type     
+			, rels_person_name     
+			, cntct_info1 		   
+			, cntct_info2 		   
+			, cntct_info3 		   
+			, cntct_full_nm        	
+			, cust_bas_ctplc_yn
+			, sys_creation_date
+			, created_by
+			, sys_update_date
+			, last_updated_by
+			, application_id
+			, dl_service_code
+			, dl_update_stamp         
+		) VALUES(
+			  #{contactSeq}
+			, #{custNo ,jdbcType=VARCHAR} 
+			, #{contactTypeCode ,jdbcType=VARCHAR} 
+			, #{telDivCode      ,jdbcType=VARCHAR} 
+			, #{relationDivCode ,jdbcType=VARCHAR} 
+			, #{relsPersonName  ,jdbcType=VARCHAR} 
+			, #{cntctInfo1      ,jdbcType=VARCHAR} 
+			, #{cntctInfo2      ,jdbcType=VARCHAR} 
+			, #{cntctInfo3      ,jdbcType=VARCHAR} 
+			, #{cntctFullNm     ,jdbcType=VARCHAR} 
+			, #{baseContact     ,jdbcType=VARCHAR} 
+			, SYSDATE
+			, #{operatorId}
+			, SYSDATE
+			, #{operatorId}
+			, #{operatorId}
+			, 'addContact'
+			, 0
+		)     
+	</insert>
+	<!-- 
+		id : updateContact
+		
+		
+	 -->
+	<update id="updateContact" parameterType="AsContact">
+		UPDATE aba_cs_hb_cust_ctplc
+		SET
+			  cust_no           =  #{custNo ,jdbcType=VARCHAR}  
+			, cntct_pnt_type_cd =  #{contactTypeCode ,jdbcType=VARCHAR} 
+			, telno_dv_cd       =  #{telDivCode ,jdbcType=VARCHAR}
+			, relation_type     =  #{relationDivCode ,jdbcType=VARCHAR}
+			, cntct_info1 	    =  #{cntctInfo1 ,jdbcType=VARCHAR}  
+			, cntct_info2 	    =  #{cntctInfo2 ,jdbcType=VARCHAR}     
+			, cntct_info3 	    =  #{cntctInfo3 ,jdbcType=VARCHAR}
+			, cntct_full_nm     =  #{cntctFullNm ,jdbcType=VARCHAR} 
+			, cust_bas_ctplc_yn =  #{baseContact ,jdbcType=VARCHAR} 
+			, rels_person_name  =  #{relsPersonName ,jdbcType=VARCHAR}
+			, sys_update_date    =  SYSDATE                                
+			, last_updated_by     =  #{operatorId}                    
+			, application_id      =  #{operatorId}                       
+			, dl_service_code     =  'updateContact'                          
+		WHERE cntct_pnt_seqno = #{contactSeq}
+	</update>
+	
+	<delete id="deleteContact" parameterType="string">
+		DELETE FROM aba_cs_hb_cust_ctplc 
+		WHERE cntct_pnt_seqno = #{contactSeq}
+	</delete>
+	
+	<delete id="deleteAllContact" parameterType="string">
+		DELETE FROM aba_cs_hb_cust_ctplc 
+		WHERE cust_no = #{custNo}
+	</delete>
+	
+	<select id="getContact" parameterType="string" resultType="AsContact">
+		SELECT
+		<include refid="contactColumn"/>
+		FROM FROM aba_cs_hb_cust_ctplc 
+		WHERE cntct_pnt_seqno = #{contactSeq}
+	</select>
+	
+	<select id="getCustomerContactList" parameterType="string" resultType="AsContact">
+		SELECT
+		    cntct_pnt_seqno      contactSeq     
+		  , cust_no              custNo
+		  , CASE WHEN cntct_pnt_type_cd = '1' THEN 'Tel' ELSE 'Email' END AS contactTypeCode
+		  , CASE WHEN telno_dv_cd = '1' THEN 'General' 
+		  		 WHEN telno_dv_cd = '2' THEN 'Office' ELSE 'Bill' END AS telDivCode       
+		  , CASE WHEN relation_type = '1' THEN 'Family'
+		  		 WHEN relation_type = '2' THEN 'Firend'
+		         WHEN relation_type = '3' THEN 'Couple'
+		         WHEN relation_type = '4' THEN 'Employee'
+		         WHEN relation_type = '5' THEN 'Neighbor'
+		         WHEN relation_type = '6' THEN 'Company'
+		         WHEN relation_type = '8' THEN 'Division'
+		         WHEN relation_type = '9' THEN 'Team' ELSE 'Self' END AS relationDivCode      
+		  , rels_person_name     relsPersonName      
+		  , cntct_info1 		   cntctInfo1 
+		  , cntct_info2 		   cntctInfo2 
+		  , cntct_info3 		   cntctInfo3 
+		  , cntct_full_nm        cntctFullNm  	
+		  , cust_bas_ctplc_yn    baseContact     
+		FROM aba_cs_hb_cust_ctplc
+		WHERE cust_no = #{custNo}
+		ORDER BY cntct_pnt_type_cd, telno_dv_cd
+	</select>
+	
+	<select id="getCustomerContact" parameterType="string" resultType="AsContact">
+		SELECT
+		<include refid="contactColumn"/>
+		FROM aba_cs_hb_cust_ctplc
+		WHERE cust_no = #{custNo} 
+		AND cust_bas_ctplc_yn = '1'
+		
+	</select>
+	
+	<!-- 2013.04.03 추가 -->
+	<select id="getCustomerContactList2" parameterType="string" resultType="AsContact">
+		SELECT
+		<include refid="contactColumn"/>
+		FROM aba_cs_hb_cust_ctplc
+		WHERE cust_no = #{custNo} 
+		  AND cntct_pnt_type_cd = '1'		
+	</select>	
+</mapper>
